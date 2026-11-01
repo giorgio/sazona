@@ -26,6 +26,7 @@ ICONO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icono.png")
 st.set_page_config(page_title="sazón.", page_icon=ICONO if os.path.exists(ICONO) else "🍲", layout="wide")
 
 ESPERA_ENTRE_CONSULTAS = 6
+TIENDAS_CERCANAS = "https://www.google.com/maps/search/?api=1&query=supermercados+y+mercados+cerca+de+m%C3%AD"
 POR_PAGINA = 3            # recetas que se muestran de una vez
 BASE_PERSONAS = 4         # la IA calcula para 4; la app escala a lo que elija la persona
 MAX_PORCION = 2.5
@@ -116,7 +117,7 @@ def mostrar_foto(r):
 
 
 # ---------------------------------------------------------------------------
-# Detalle de receta: personas -> costo por porción y total
+# Detalle de receta: personas -> costo de los productos
 # ---------------------------------------------------------------------------
 
 @st.dialog("Receta", width="large")
@@ -130,16 +131,19 @@ def ver_receta(r):
                                    value=st.session_state["personas"], key=f"pers_{r.nombre}")
         st.session_state["personas"] = personas
         rp = n.ajustar_porciones(r, personas)
-        d.costos(n.costo_porcion(rp), n.costo_receta(rp), personas)
+        compras = n.compras_receta(rp)
+        d.costo_compras(compras["total"], personas)
         ya = en_menu(r)
         st.button("Quitar de mi semana" if ya else f"Agregar a mi semana (para {personas})",
                   icon=":material/remove:" if ya else ":material/add:", on_click=alternar_menu, args=(rp,),
                   type="secondary" if ya else "primary", width="stretch")
-    st.subheader(f"Ingredientes para {personas}")
-    filas = n.tabla_ingredientes(rp)
-    st.dataframe(filas, hide_index=True, width="stretch", height=alto(filas),
-                 column_config={"Costo en la receta": st.column_config.NumberColumn(format="$%.2f")})
-    st.caption("“Costo en la receta” es solo la parte que usas del paquete. Precios estimados.")
+    st.subheader(f"Productos para {personas}")
+    st.dataframe(compras["comprar"], hide_index=True, width="stretch", height=alto(compras["comprar"]),
+                 column_config={"Precio": st.column_config.NumberColumn(format="$%.2f")})
+    if compras["despensa"]:
+        st.caption("Revisa si ya tienes en casa: " + ", ".join(f["Producto"] for f in compras["despensa"]) + ".")
+    st.caption("Precios del producto completo en la tienda. Son estimados: confírmalos al comprar.")
+    st.link_button("Ver tiendas cercanas", TIENDAS_CERCANAS, icon=":material/location_on:", width="stretch")
     st.subheader("Preparación")
     for i, p in enumerate(r.pasos, 1):
         st.markdown(f"{i}. {p}")
@@ -287,10 +291,11 @@ def pagina_semana():
                                     "Para": st.column_config.TextColumn(width="medium")})
         if lista["despensa"]:
             st.caption("Revisa si ya tienes en casa: " + ", ".join(f["Ingrediente"] for f in lista["despensa"]))
-        b1, b2 = st.columns(2, gap="medium")
+        b1, b2, b3 = st.columns(3, gap="small")
+        b3.link_button("Tiendas cercanas", TIENDAS_CERCANAS, icon=":material/location_on:", width="stretch")
         b1.download_button("Descargar lista", n.texto_lista(menu, lista).encode("utf-8"), "lista_sazon.txt",
                            "text/plain", icon=":material/download:", width="stretch")
-        b2.link_button("Ver dónde comprar más barato en canastas.", n.enlace_canastas(lista),
+        b2.link_button("Comparar precios en canastas.", n.enlace_canastas(lista),
                        icon=":material/shopping_basket:", width="stretch")
 
     seccion_sobrantes(lista)

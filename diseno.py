@@ -8,7 +8,8 @@ import html
 
 import streamlit as st
 
-TERRA = "#B5482A"        # color principal
+TERRA = "#B5482A"        # color principal (logo, precios)
+BOTON = "#AD5F38"        # terracota arcilla para botones: menos rojo
 TERRA_CLARO = "#F7E6DE"
 TEXTO = "#2A1F1A"
 GRIS = "#7D6F68"
@@ -86,11 +87,15 @@ header[data-testid="stHeader"] {{ background: transparent; }}
 .sz-credito a {{ color:{GRIS}; }}
 [class*="st-key-en_menu_"] button {{ background:{TERRA_CLARO}; border-color:{TERRA_CLARO}; color:{TERRA}; }}
 
-/* Todo en terracota: botones secundarios con borde y texto terracota */
+/* Botones en terracota arcilla (no rojo) */
+.stButton button[kind="primary"], [data-testid="stFormSubmitButton"] button {{ background:{BOTON} !important;
+  border-color:{BOTON} !important; color:#fff !important; }}
+.stButton button[kind="primary"]:hover, [data-testid="stFormSubmitButton"] button:hover {{ background:#96502E !important;
+  border-color:#96502E !important; }}
 .stButton button[kind="secondary"], [data-testid="stDownloadButton"] button, [data-testid="stLinkButton"] a {{
-  border-color:{TERRA}; color:{TERRA}; }}
+  border-color:{BOTON}; color:{BOTON}; }}
 .stButton button[kind="secondary"]:hover, [data-testid="stDownloadButton"] button:hover,
-[data-testid="stLinkButton"] a:hover {{ background:{TERRA_CLARO}; border-color:{TERRA}; color:{TERRA}; }}
+[data-testid="stLinkButton"] a:hover {{ background:{TERRA_CLARO}; border-color:{BOTON}; color:{BOTON}; }}
 
 /* Inicio: receta sugerida y países */
 .st-key-sugerida {{ background:#fff; border-radius:22px !important; padding:1.4rem !important; border-color:{BORDE} !important; }}
@@ -101,7 +106,7 @@ header[data-testid="stHeader"] {{ background: transparent; }}
 .st-key-paises button:hover {{ filter:brightness(.92); }}
 .st-key-paises button {{ aspect-ratio:1 / 1; width:100%; height:auto; min-height:0 !important; border-radius:18px; }}
 .st-key-paises button p {{ font-size:1.15rem !important; font-weight:700; text-align:center; }}
-.st-key-volver button {{ border:none; background:transparent; padding-left:0; color:{TERRA}; }}
+.st-key-volver button {{ border:none; background:transparent; padding-left:0; color:{BOTON}; }}
 
 .st-key-menu .stButton button {{ border:none !important; }}
 .st-key-menu .st-key-nav_on button {{ color:{TEXTO} !important; background:{TERRA_CLARO} !important; }}
@@ -115,7 +120,7 @@ header[data-testid="stHeader"] {{ background: transparent; }}
 .sz-costo {{ flex:1; background:{TERRA_CLARO}; border-radius:14px; padding:.8rem 1rem; }}
 .sz-costo small {{ color:{GRIS}; font-size:.82rem; }}
 .sz-costo b {{ display:block; color:{TERRA}; font-size:1.7rem; font-weight:800; letter-spacing:-.03em; }}
-.sz-costo.total {{ background:{TERRA}; }}
+.sz-costo.total {{ background:{BOTON}; }}
 .sz-costo.total small, .sz-costo.total b {{ color:#fff; }}
 
 /* Resumen de la semana */
@@ -244,5 +249,14 @@ def costos(por_porcion: float, total: float, personas: int):
     st.markdown(
         f'<div class="sz-costos"><div class="sz-costo"><small>Por porción</small><b>${por_porcion:.2f}</b></div>'
         f'<div class="sz-costo total"><small>Toda la receta ({gente})</small><b>${total:.2f}</b></div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def costo_compras(total: float, personas: int):
+    gente = "1 persona" if personas == 1 else f"{personas} personas"
+    st.markdown(
+        f'<div class="sz-costos"><div class="sz-costo total"><small>Costo de los productos para {gente}</small>'
+        f'<b>${total:.2f}</b></div></div>',
         unsafe_allow_html=True,
     )
