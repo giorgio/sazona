@@ -20,6 +20,10 @@ MODELO_RESPALDO = "gemini-3.5-flash-lite"
 
 COCINAS = ["Ecuatoriana", "Italiana", "China", "Mexicana", "Peruana", "Mediterránea",
            "India", "Japonesa", "Tailandesa", "Árabe", "Colombiana", "Española"]
+# Botones del inicio: lo que ve la persona -> la cocina que se pide a la IA
+PAISES = {"Ecuador": "Ecuatoriana", "Italia": "Italiana", "China": "China", "México": "Mexicana",
+          "Perú": "Peruana", "Colombia": "Colombiana", "España": "Española", "Mediterráneo": "Mediterránea",
+          "India": "India", "Japón": "Japonesa", "Tailandia": "Tailandesa", "Medio Oriente": "Árabe"}
 TIPOS = ["Alta en proteína", "Vegetariana", "Vegana", "Para niños", "Baja en grasa", "Sin gluten"]
 ICONOS = ["pasta", "arroz", "sopa", "ensalada", "pollo", "carne", "pescado", "huevo", "menestra", "otro"]
 RECETAS_POR_BUSQUEDA = 6
@@ -208,7 +212,7 @@ def llamar_gemini(cliente, prompt: str, esquema, modelos=(MODELO_PRINCIPAL, MODE
                         response_mime_type="application/json",
                         response_schema=esquema,
                         temperature=0.7,
-                        max_output_tokens=16000,
+                        max_output_tokens=12000,
                         thinking_config=types.ThinkingConfig(thinking_level=razonamiento) if usar_nivel else None,
                     ),
                 )
@@ -241,15 +245,15 @@ def llamar_gemini(cliente, prompt: str, esquema, modelos=(MODELO_PRINCIPAL, MODE
 
 
 def buscar_recetas(cliente, cocinas, personas, max_porcion, tiempo, tipos=(), ciudad="Guayaquil",
-                   excluir=(), sobrantes=()):
+                   excluir=(), sobrantes=(), cantidad=RECETAS_POR_BUSQUEDA):
     """Devuelve (recetas dentro del presupuesto ordenadas por precio, cuántas se descartaron)."""
     prompt = PROMPT_RECETAS.format(
-        n=RECETAS_POR_BUSQUEDA, cocinas=", ".join(cocinas), personas=personas, max_porcion=max_porcion,
+        n=cantidad, cocinas=", ".join(cocinas), personas=personas, max_porcion=max_porcion,
         tiempo=tiempo, tipos=", ".join(tipos) or "cualquiera", ciudad=ciudad or "Guayaquil",
         excluir=", ".join(excluir) or "ninguna",
         extra=EXTRA_SOBRANTES.format(sobrantes=", ".join(sobrantes)) if sobrantes else "",
     )
-    cat, _ = llamar_gemini(cliente, prompt, Catalogo)
+    cat, _ = llamar_gemini(cliente, prompt, Catalogo, razonamiento="minimal")
     validas, descartadas = [], 0
     for r in cat.recetas:
         r = ajustar_porciones(limpiar_receta(r), personas)

@@ -73,6 +73,36 @@ header[data-testid="stHeader"] {{ background: transparent; }}
 .sz-credito a {{ color:{GRIS}; }}
 [class*="st-key-en_menu_"] button {{ background:{TERRA_CLARO}; border-color:{TERRA_CLARO}; color:{TERRA}; }}
 
+/* Todo en terracota: botones secundarios con borde y texto terracota */
+.stButton button[kind="secondary"], [data-testid="stDownloadButton"] button, [data-testid="stLinkButton"] a {{
+  border-color:{TERRA}; color:{TERRA}; }}
+.stButton button[kind="secondary"]:hover, [data-testid="stDownloadButton"] button:hover,
+[data-testid="stLinkButton"] a:hover {{ background:{TERRA_CLARO}; border-color:{TERRA}; color:{TERRA}; }}
+
+/* Inicio: receta sugerida y países */
+.st-key-sugerida {{ background:#fff; border-radius:22px !important; padding:1.4rem !important; border-color:{BORDE} !important; }}
+.st-key-sugerida [data-testid="stImage"] img {{ border-radius:16px; aspect-ratio:4/3; object-fit:cover; width:100%; }}
+.sz-ceja-terra {{ color:{TERRA}; }}
+.sz-seccion {{ font-size:1.35rem; font-weight:800; letter-spacing:-.02em; color:{TEXTO}; margin:1.2rem 0 .8rem; }}
+.st-key-paises button {{ aspect-ratio:1 / 1; width:100%; height:auto; min-height:0 !important; border-radius:18px; }}
+.st-key-paises button p {{ font-size:1.15rem !important; font-weight:700; text-align:center; }}
+.st-key-volver button {{ border:none; background:transparent; padding-left:0; color:{TERRA}; }}
+
+.st-key-menu .stButton button {{ border:none !important; }}
+.st-key-menu .st-key-nav_on button {{ color:{TEXTO} !important; background:{TERRA_CLARO} !important; }}
+.st-key-menu [class*="st-key-nav_off"] button {{ color:#5E524C !important; }}
+[class*="st-key-en_menu_"] .stButton button {{ background:{TERRA_CLARO}; border-color:{TERRA_CLARO}; }}
+
+[data-testid="stHeaderActionElements"] {{ display:none; }}
+
+/* Costos según personas */
+.sz-costos {{ display:flex; gap:.8rem; margin:.4rem 0 1rem; }}
+.sz-costo {{ flex:1; background:{TERRA_CLARO}; border-radius:14px; padding:.8rem 1rem; }}
+.sz-costo small {{ color:{GRIS}; font-size:.82rem; }}
+.sz-costo b {{ display:block; color:{TERRA}; font-size:1.7rem; font-weight:800; letter-spacing:-.03em; }}
+.sz-costo.total {{ background:{TERRA}; }}
+.sz-costo.total small, .sz-costo.total b {{ color:#fff; }}
+
 /* Resumen de la semana */
 .sz-resumen {{ display:flex; gap:1rem; flex-wrap:wrap; margin:.4rem 0 1.2rem; }}
 .sz-dato {{ background:#fff; border:1px solid {BORDE}; border-radius:16px; padding:1rem 1.2rem; flex:1 1 160px; }}
@@ -98,6 +128,8 @@ header[data-testid="stHeader"] {{ background: transparent; }}
 .sz-menu-nota {{ color:{GRIS}; font-size:.95rem; line-height:1.75; padding:0 .2rem; }}
 
 @media (max-width: 640px) {{
+  .st-key-paises [data-testid="stHorizontalBlock"] {{ flex-direction:row !important; flex-wrap:wrap; gap:.6rem; }}
+  .st-key-paises [data-testid="stColumn"] {{ flex:1 1 calc(50% - .3rem) !important; min-width:calc(50% - .3rem) !important; }}
   .sz-lema {{ display:none; }}
   .sz-cabecera {{ margin-bottom:1.4rem; }}
   .st-key-tarjeta {{ padding:1.2rem 1rem !important; }}
@@ -114,7 +146,7 @@ header[data-testid="stHeader"] {{ background: transparent; }}
 """
 
 NOTAS = {
-    "explorar": ("Rico no tiene que ser caro.", "Recetas de todo el mundo, con ingredientes de aquí y su precio por porción."),
+    "inicio": ("Rico no tiene que ser caro.", "Recetas de todo el mundo, con ingredientes de aquí y su precio por porción."),
     "semana": ("Compra una vez, cocina toda la semana.", "Junta tus recetas en una sola lista y aprovecha lo que sobra."),
 }
 
@@ -143,14 +175,14 @@ def menu(activo: str, ir, en_semana: int):
     with st.container(key="menu"):
         st.markdown('<p class="sz-menu-ceja">Tu cocina, organizada</p>', unsafe_allow_html=True)
         with st.container(key="menu_botones"):
-            with st.container(key="nav_on" if activo == "explorar" else "nav_off_explorar"):
-                st.button("Explorar recetas", icon=":material/restaurant_menu:", on_click=ir, args=("explorar",),
+            with st.container(key="nav_on" if activo == "inicio" else "nav_off_inicio"):
+                st.button("Recetas", icon=":material/restaurant_menu:", on_click=ir, args=("inicio",),
                           width="stretch")
             with st.container(key="nav_on" if activo == "semana" else "nav_off_semana"):
                 st.button(f"Mi semana ({en_semana})", icon=":material/calendar_month:", on_click=ir,
                           args=("semana",), width="stretch")
         st.divider()
-        fuerte, texto = NOTAS.get(activo, NOTAS["explorar"])
+        fuerte, texto = NOTAS.get(activo, NOTAS["inicio"])
         st.markdown(f'<div class="sz-menu-nota"><b>{fuerte}</b>{texto}</div>', unsafe_allow_html=True)
         st.caption("Precios estimados por IA: confírmalos en la tienda. Fotos libres de Wikimedia Commons.")
 
@@ -172,7 +204,7 @@ def credito_foto(foto: dict):
     )
 
 
-def info_receta(r, por_porcion: float, total: float):
+def info_receta(r, por_porcion: float | None = None):
     chips = [f'<span class="sz-chip">{html.escape(r.cocina)}</span>',
              f'<span class="sz-chip gris">{r.tiempo_minutos} min</span>']
     chips += [f'<span class="sz-chip gris">{html.escape(e)}</span>' for e in r.etiquetas[:2]]
@@ -180,8 +212,8 @@ def info_receta(r, por_porcion: float, total: float):
         f'<div class="sz-chips">{"".join(chips)}</div>'
         f'<div class="sz-nombre">{html.escape(r.nombre)}</div>'
         f'<p class="sz-desc">{html.escape(r.descripcion)}</p>'
-        f'<div class="sz-precio"><b>${por_porcion:.2f}</b><span>por porción · ${total:.2f} para {r.porciones}</span></div>'
-        f'<div class="sz-nutri">~{r.calorias_por_porcion} kcal · {r.proteina_g_por_porcion} g de proteína por porción</div>',
+        + (f'<div class="sz-precio"><b>${por_porcion:.2f}</b><span>por porción</span></div>' if por_porcion is not None else "")
+        +         f'<div class="sz-nutri">~{r.calorias_por_porcion} kcal · {r.proteina_g_por_porcion} g de proteína por porción</div>',
         unsafe_allow_html=True,
     )
 
@@ -190,3 +222,12 @@ def resumen(datos: list[tuple[str, str, bool]]):
     partes = "".join(f'<div class="sz-dato{" destacado" if d else ""}"><small>{html.escape(t)}</small><b>{v}</b></div>'
                      for t, v, d in datos)
     st.markdown(f'<div class="sz-resumen">{partes}</div>', unsafe_allow_html=True)
+
+
+def costos(por_porcion: float, total: float, personas: int):
+    gente = "1 persona" if personas == 1 else f"{personas} personas"
+    st.markdown(
+        f'<div class="sz-costos"><div class="sz-costo"><small>Por porción</small><b>${por_porcion:.2f}</b></div>'
+        f'<div class="sz-costo total"><small>Toda la receta ({gente})</small><b>${total:.2f}</b></div></div>',
+        unsafe_allow_html=True,
+    )
