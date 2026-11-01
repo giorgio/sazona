@@ -1,0 +1,14 @@
+[theme]
+base = "light"
+primaryColor = "#B5482A"
+backgroundColor = "#F7F4F1"
+secondaryBackgroundColor = "#F7E6DE"
+textColor = "#2A1F1A"
+linkColor = "#B5482A"
+borderColor = "#EADFD8"
+showWidgetBorder = true
+font = "DM Sans:https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap"
+baseRadius = "0.75rem"
+buttonRadius = "0.7rem"
+headingFontWeights = [700, 700, 700, 700]
+dataframeHeaderBackgroundColor = "#F7F4F1"
