@@ -183,8 +183,9 @@ def pagina_inicio():
         for fila in range(0, len(paises), 4):
             cols = st.columns(4, gap="small")
             for j, pais in enumerate(paises[fila:fila + 4]):
-                cols[j].button(pais, key=f"pais_{pais}", type="primary", width="stretch",
-                               on_click=ir, args=("pais", pais))
+                i = fila + j
+                with cols[j].container(key=f"tono{i % len(d.TONOS)}_{i}"):
+                    st.button(pais, key=f"pais_{pais}", width="stretch", on_click=ir, args=("pais", pais))
 
     with hueco_sugerida:
         dia = hoy()
