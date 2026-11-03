@@ -243,6 +243,12 @@ def foto_vacia():
 
 
 def credito_foto(foto: dict):
+    if foto.get("fuente") == "Unsplash":            # formato que pide Unsplash: Foto de <nombre> en Unsplash
+        st.markdown(
+            f'<div class="sz-credito">Foto de <a href="{html.escape(foto["pagina"])}" target="_blank">'
+            f'{html.escape(foto["autor"])}</a> en <a href="{html.escape(foto.get("fuente_url", "https://unsplash.com"))}" '
+            f'target="_blank">Unsplash</a></div>', unsafe_allow_html=True)
+        return
     lic = foto.get("licencia") or ""
     if lic and foto.get("licencia_url"):
         lic = f' · <a href="{html.escape(foto["licencia_url"])}" target="_blank">{html.escape(lic)}</a>'

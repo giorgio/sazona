@@ -108,6 +108,17 @@ def foto_pexels(consulta: str, clave: str) -> dict | None:
             "fuente": "Pexels"}
 
 
+def avisar_descarga(f: dict, clave: str) -> None:
+    """Unsplash pide avisar cuando la app usa una foto (cuenta para el fotógrafo). Si falla, no pasa nada."""
+    url = (f.get("links") or {}).get("download_location")
+    if not url:
+        return
+    try:
+        requests.get(url, headers={"Authorization": f"Client-ID {clave}", "Accept-Version": "v1"}, timeout=3)
+    except requests.RequestException:
+        pass
+
+
 def foto_unsplash(consulta: str, clave: str) -> dict | None:
     """Fotos de comida de Unsplash. Se enlazan directo (lo pide Unsplash) y se acredita al fotógrafo."""
     try:
@@ -129,6 +140,7 @@ def foto_unsplash(consulta: str, clave: str) -> dict | None:
         return None
     u = f.get("user") or {}
     utm = f"?utm_source={APP}&utm_medium=referral"
+    avisar_descarga(f, clave)
     return {"url": (f.get("urls") or {}).get("regular"), "autor": u.get("name") or "Unsplash",
             "pagina": ((u.get("links") or {}).get("html") or "https://unsplash.com") + utm,
             "licencia": "", "licencia_url": "", "fuente": "Unsplash",
