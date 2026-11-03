@@ -45,11 +45,23 @@ NO_ES_PLATO = ("field", "paddy", "plant", "farm", "crop", "harvest", "seed", "tr
                "coin", "poster", "advert", "menu", "truck", "farmer", "cooking class", "factory")
 
 
+# Palabras que dicen QUÉ PLATO es (no un ingrediente): si la búsqueda tiene una, la foto debe mostrarla
+TIPO_PLATO = {"salad", "soup", "stew", "sandwich", "omelette", "omelet", "tortilla", "scrambled", "fried", "ceviche",
+              "curry", "pasta", "spaghetti", "noodles", "risotto", "pizza", "burger", "taco", "tacos", "burrito",
+              "empanada", "empanadas", "cake", "pie", "pudding", "smoothie", "juice", "porridge", "oatmeal", "pancake",
+              "pancakes", "casserole", "roast", "grilled", "baked", "skewer", "skewers", "dumplings", "wrap", "bowl",
+              "chowder", "broth", "puree", "mash", "mashed", "patties", "fritters", "croquettes", "rolls", "tart",
+              "toast", "breakfast", "plantain", "locro", "encebollado", "bolon", "menestra"}
+
+
 def es_del_plato(titulo: str, palabras: list[str], minimo: int | None = None) -> bool:
     """La foto sirve solo si su nombre menciona el plato (2 palabras si hay 2 o más) y no es otra cosa."""
     t = (titulo or "").lower().replace("_", " ")
     if any(x in t for x in NO_ES_PLATO):
         return False
+    tipos = [w for w in palabras if w in TIPO_PLATO]
+    if tipos and not any(_raiz(w) in t for w in tipos):
+        return False                                  # "tomato salad" no acepta una foto de tomates sueltos
     raices = {_raiz(w) for w in palabras}
     aciertos = sum(1 for r in raices if r and r in t)
     if minimo is None:
@@ -124,7 +136,7 @@ def avisar_descarga(f: dict, clave: str) -> None:
 def _unsplash(query: str, clave: str) -> list[dict]:
     try:
         r = requests.get(UNSPLASH_BUSQUEDA, params={"query": query, "per_page": 10, "orientation": "landscape",
-                                                     "content_filter": "high"},
+                                                     "content_filter": "high", "order_by": "relevant"},
                          headers={"Authorization": f"Client-ID {clave}", "Accept-Version": "v1"}, timeout=4)
         return r.json().get("results") or [] if r.status_code == 200 else []
     except (requests.RequestException, ValueError):
@@ -150,8 +162,12 @@ def foto_unsplash(consulta: str, clave: str) -> dict | None:
         if q in vistos:
             continue
         vistos.add(q)
-        fotos = _unsplash(q + " food", clave)
+        fotos = _unsplash(q + " food photography plated", clave) or _unsplash(q + " food", clave)
         buenas = [f for f in fotos if es_del_plato(texto(f), palabras, minimo=1)]
+        # primero las que se ven como foto de restaurante: plato servido, en mesa, de cerca
+        GASTRO = ("plate", "bowl", "dish", "served", "table", "close-up", "closeup", "meal", "food photography",
+                  "restaurant", "plated", "breakfast", "lunch", "dinner")
+        buenas.sort(key=lambda f: -sum(g in texto(f).lower() for g in GASTRO))
         if buenas:
             elegida = buenas[0]
             break
