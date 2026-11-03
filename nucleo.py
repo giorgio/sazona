@@ -104,7 +104,11 @@ SISTEMA = (
     "Conoces cocinas de todo el mundo y las adaptas con ingredientes que se consiguen en mercados y "
     "supermercados ecuatorianos (Tía, Mi Comisariato, Supermaxi, Akí, TuTi, mercados municipales). "
     "Trabajas en USD y tus precios son ESTIMACIONES realistas, nunca exactas. No das dietas médicas "
-    "ni diagnósticos. Escribes en español neutro, claro y apetitoso."
+    "ni diagnósticos. Escribes en ESPAÑOL DE ECUADOR, claro y apetitoso: usa los nombres que se usan aquí "
+    "(arroz blanco, refrito, fréjol, choclo, verde, maduro, guineo, tomate riñón, cebolla paiteña o colorada, "
+    "culantro, aguacate, zapallo, vainitas, arveja, maní, mote, queso fresco, ají) y nunca los de otros países "
+    "(arroz patrio, hogao, frijol, palta, elote, ejote, chícharo, jitomate, cacahuate, betabel). Las cosas que se "
+    "cuentan por unidad (huevos, papas, tomates, panes, salchichas…) van siempre en NÚMEROS ENTEROS."
 )
 
 PROMPT_RECETAS = """Propón {n} recetas distintas.
@@ -290,6 +294,50 @@ def presentacion_real(i: Ingrediente) -> Ingrediente:
     return i
 
 
+# Nombres de otros países -> como se dice en Ecuador (por si la IA se equivoca)
+ECUADOR = [
+    (r"\barroz patrio\b", "arroz blanco"), (r"\bhogao\b", "refrito"), (r"\bfrijol(es)?\b", r"fréjol\1"),
+    (r"\bfríjol(es)?\b", r"fréjol\1"), (r"\bpaltas?\b", "aguacate"), (r"\belotes?\b", "choclo"),
+    (r"\bejotes?\b", "vainitas"), (r"\bchícharos?\b", "arveja"), (r"\bjitomates?\b", "tomate riñón"),
+    (r"\bcacahuates?\b", "maní"), (r"\bcacahuetes?\b", "maní"), (r"\bbetabel\b", "remolacha"),
+    (r"\bplátano macho\b", "verde"), (r"\bcalabaza\b", "zapallo"), (r"\bpimentón rojo\b", "pimiento rojo"),
+    (r"\bchile\b", "ají"), (r"\bfrutilla\b", "frutilla"), (r"\bpapa criolla\b", "papa chola"),
+]
+
+
+def a_ecuador(texto: str) -> str:
+    if not texto:
+        return texto
+    for patron, cambio in ECUADOR:
+        def rep(m, cambio=cambio):
+            nuevo = m.expand(cambio) if "\\" in cambio else cambio
+            return nuevo[:1].upper() + nuevo[1:] if m.group(0)[:1].isupper() else nuevo
+        texto = re.sub(patron, rep, texto, flags=re.IGNORECASE)
+    return texto
+
+
+def unidades_paquete(presentacion: str) -> int | None:
+    """Cuántas unidades trae una presentación que se cuenta ('cubeta de 30' -> 30, 'unidad' -> 1)."""
+    t = _clave(presentacion or "")
+    m = re.search(r"(\d+)\s*(unidades?|u\b)|(cubeta|docena|paquete|malla|atado|funda) de (\d+)\b(?!\s*(g|kg|ml|l|lb))", t)
+    if m:
+        return int(m.group(1) or m.group(4))
+    if re.search(r"\bdocena\b", t):
+        return 12
+    if re.search(r"\b(unidad|c/u|cada uno)\b", t):
+        return 1
+    return None
+
+
+def enteros(i: Ingrediente) -> Ingrediente:
+    """Lo que se cuenta por unidad se usa entero: nada de 1.8 huevos."""
+    total = unidades_paquete(i.presentacion)
+    if total and not i.basico_de_despensa:
+        usadas = max(1, round(total * i.fraccion_usada))
+        i.fraccion_usada = round(usadas / total, 4)
+    return i
+
+
 def limpiar_receta(r: Receta) -> Receta:
     """Corrige datos imposibles que a veces devuelve la IA."""
     r.porciones = max(1, int(r.porciones or 1))
@@ -301,7 +349,11 @@ def limpiar_receta(r: Receta) -> Receta:
         i.fraccion_usada = min(1.0, max(0.0, float(i.fraccion_usada or 0)))
         buenos.append(i)
     r.ingredientes = buenos
-    r.ingredientes = [presentacion_real(i) for i in r.ingredientes]
+    r.nombre, r.descripcion = a_ecuador(r.nombre), a_ecuador(r.descripcion)
+    r.pasos = [a_ecuador(p) for p in r.pasos]
+    for i in r.ingredientes:
+        i.nombre, i.cantidad = a_ecuador(i.nombre), a_ecuador(i.cantidad)
+    r.ingredientes = [enteros(presentacion_real(i)) for i in r.ingredientes]
     r.alergenos = detectar_alergenos(r)
     if r.icono not in ICONOS:
         r.icono = "otro"
@@ -328,6 +380,7 @@ def ajustar_porciones(r: Receta, personas: int) -> Receta:
     nueva = r.model_copy(deep=True)
     for i in nueva.ingredientes:
         i.fraccion_usada = round(i.fraccion_usada * f, 3)
+        enteros(i)
     nueva.porciones = personas
     return nueva
 
