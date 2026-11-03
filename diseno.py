@@ -48,7 +48,7 @@ header[data-testid="stHeader"] {{ background: transparent; }}
   background:#fff; border-bottom:1px solid {BORDE}; padding:1.3rem 0; margin-bottom:2.2rem;
   box-shadow:0 0 0 100vmax #fff; clip-path:inset(0 -100vmax); }}
 .sz-logo {{ display:flex; align-items:center; gap:.85rem; }}
-.st-key-atras {{ position:fixed !important; right:1.6rem; bottom:1.6rem; z-index:90; width:auto !important; }}
+.st-key-atras {{ position:fixed !important; left:1.6rem; bottom:1.6rem; z-index:90; width:auto !important; }}
 .st-key-atras button {{ background:#fff; box-shadow:0 6px 18px rgba(60,30,15,.22);
   min-height:3.4rem; padding:.7rem 2.2rem; font-size:1.1rem; font-weight:700;
   border:2px solid {BOTON}; color:{BOTON}; border-radius:14px; }}
