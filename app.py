@@ -154,6 +154,17 @@ def ver_receta(r):
         st.button("Quitar de mi semana" if ya else f"Agregar a mi semana (para {personas})",
                   icon=":material/remove:" if ya else ":material/add:", on_click=alternar_menu, args=(rp,),
                   type="secondary" if ya else "primary", width="stretch")
+    with st.expander("🧾 Desglose de precios: qué compras y cuánto cuesta cada cosa"):
+        filas = n.desglose_receta(rp)
+        st.dataframe(filas, hide_index=True, width="stretch", height=alto(filas),
+                     column_config={c: st.column_config.NumberColumn(format="$%.2f")
+                                    for c in ("Precio del paquete", "Total pagado", "Vale lo que usas")})
+        st.markdown(
+            f"- **Todos los ingredientes:** ${compras['total']:.2f}: la suma de los paquetes enteros que compras "
+            f"(sin lo de despensa).\n"
+            f"- **Toda la comida:** ${n.costo_receta(rp):.2f}: solo la parte de cada paquete que usa la receta.\n"
+            f"- **Por porción:** ${n.costo_porcion(rp):.2f} = ${n.costo_receta(rp):.2f} ÷ {personas}.\n"
+            "- Los paquetes son tamaños que se venden en Ecuador; lo que no usas te sobra para otras comidas.")
     st.subheader(f"Productos para {personas}")
     st.dataframe(compras["comprar"], hide_index=True, width="stretch", height=alto(compras["comprar"]),
                  column_config={"Precio": st.column_config.NumberColumn(format="$%.2f")})

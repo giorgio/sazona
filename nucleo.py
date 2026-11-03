@@ -124,6 +124,12 @@ REGLAS
 2. Saludables: con verduras o legumbres, sin frituras profundas, poco azúcar y porciones razonables.
 3. Para cada ingrediente: la presentación en que se vende en Ecuador, su precio estimado completo y
    'fraccion_usada' = qué parte de esa presentación usa la receta (0.5 = la mitad).
+   SOLO PRESENTACIONES QUE EXISTEN en tiendas ecuatorianas, con su tamaño en g, kg, ml, litro, libra o
+   unidades: p. ej. arroz por libra o funda de 1 kg / 2 kg; fideo funda de 400 g o 500 g; lenteja o fréjol
+   por libra o funda de 500 g; leche en funda o cartón de 1 litro; aceite de 1 litro; atún en lata de 170 g;
+   huevos por unidad; verduras por unidad o por libra. NUNCA inventes tamaños ('funda de 75 g de arroz')
+   ni medias presentaciones ('media caja'): la presentación es lo que se compra entero; lo que no se usa,
+   sobra. 'cantidad' es lo que usa la receta en g, ml o unidades.
 4. PRECIOS HONESTOS: precio_presentacion_usd es lo que cuesta HOY el paquete completo en un supermercado
    ecuatoriano (2026). NUNCA bajes un precio para que la receta entre en el presupuesto: si no alcanza,
    elige otra receta u otro ingrediente más barato. Referencias reales de 2026 (mercados): libra de pollo
@@ -209,6 +215,81 @@ def cumple_dieta(r: Receta, dieta: str) -> bool:
     return not (NO_PERMITIDO.get(dieta, set()) & set(r.alergenos or []))
 
 
+# Tamaños que de verdad se venden en Ecuador (en g o ml). Si la IA inventa otro, se usa el real más
+# pequeño que alcance y el precio se recalcula con el MISMO precio por gramo que dio la IA.
+LIBRA = 454
+TAMANOS_REALES = [
+    (r"\barroz\b", "g", [LIBRA, 1000, 2000, 5000], "funda"),
+    (r"\b(fideos?|spaghetti|espagueti|tallarin(es)?|macarron(es)?|pasta corta|lasana)\b", "g", [200, 250, 400, 500, 1000], "funda"),
+    (r"\b(lentejas?|frejol(es)?|frijol(es)?|garbanzos?|arveja seca|habas secas|chochos?)\b", "g", [LIBRA, 500, 1000], "funda"),
+    (r"\b(azucar|harina|avena|maicena|quinua|morocho|canguil)\b", "g", [250, 400, LIBRA, 500, 1000, 2000], "funda"),
+    (r"\b(leche(?! de coco)|yogur|yogurt)\b", "ml", [200, 500, 946, 1000, 2000], "envase"),
+    (r"\baceite\b", "ml", [500, 900, 1000, 2000], "botella"),
+    (r"\batun\b", "g", [140, 170, 354], "lata"),
+    (r"\b(sardinas?)\b", "g", [155, 425], "lata"),
+    (r"\b(queso|quesillo)\b", "g", [250, LIBRA, 500, 1000], "unidad"),
+    (r"\b(mantequilla|margarina)\b", "g", [100, 250, 500], "barra"),
+    (r"\b(pasta de tomate|salsa de tomate)\b", "g", [100, 200, 400], "envase"),
+]
+
+
+def _tamano(texto: str, unidad: str) -> float | None:
+    """Lee el tamaño de una presentación ('funda de 500 g', '1 kg', 'libra', '1 litro') en g o ml."""
+    t = _clave(texto).replace(",", ".")
+    m = re.search(r"(\d+(?:\.\d+)?)\s*(kg|kilo|g|gr|gramos|ml|cc|l|lt|litros?|lb|libras?)\b", t)
+    if m:
+        v, u = float(m.group(1)), m.group(2)
+        if u in ("kg", "kilo"):
+            v *= 1000
+        elif u in ("l", "lt", "litro", "litros"):
+            v *= 1000
+        elif u in ("lb", "libra", "libras"):
+            v *= LIBRA
+        return v
+    if re.search(r"\b(media libra)\b", t):
+        return LIBRA / 2
+    if re.search(r"\b(libra)\b", t):
+        return LIBRA
+    if re.search(r"\b(litro)\b", t):
+        return 1000.0
+    if re.search(r"\b(kilo)\b", t):
+        return 1000.0
+    return None
+
+
+def _bonito(v: float, unidad: str) -> str:
+    if unidad == "g":
+        if abs(v - LIBRA) < 1:
+            return "1 libra"
+        return f"{v / 1000:g} kg" if v >= 1000 else f"{v:g} g"
+    return f"{v / 1000:g} litro" + ("s" if v > 1000 else "") if v >= 1000 else f"{v:g} ml"
+
+
+def presentacion_real(i: Ingrediente) -> Ingrediente:
+    """Si la presentación no existe (p. ej. 'funda de 75 g de arroz'), la cambia por la real más pequeña
+    que alcance, manteniendo el precio por gramo y la cantidad que usa la receta."""
+    nombre = _clave(i.nombre)
+    for patron, unidad, tamanos, envase in TAMANOS_REALES:
+        if not re.search(patron, nombre):
+            continue
+        actual = _tamano(i.presentacion, unidad)
+        if not actual or actual <= 0:
+            return i
+        texto_raro = re.search(r"\b(media|medio|mitad)\b|1/2", _clave(i.presentacion))
+        if any(abs(actual - t) <= t * 0.06 for t in tamanos):
+            if texto_raro:                              # 'media caja de 250 g' -> 'funda de 250 g'
+                i.presentacion = f"{envase} de {_bonito(actual, unidad)}"
+            return i                                    # ya es un tamaño real
+        usado = actual * i.fraccion_usada
+        real = next((t for t in tamanos if t >= usado), tamanos[-1])
+        precio_por = i.precio_presentacion_usd / actual
+        i.precio_presentacion_usd = round(precio_por * real, 2)
+        i.fraccion_usada = round(usado / real, 3)
+        i.presentacion = f"{envase} de {_bonito(real, unidad)}"
+        return i
+    return i
+
+
 def limpiar_receta(r: Receta) -> Receta:
     """Corrige datos imposibles que a veces devuelve la IA."""
     r.porciones = max(1, int(r.porciones or 1))
@@ -220,6 +301,7 @@ def limpiar_receta(r: Receta) -> Receta:
         i.fraccion_usada = min(1.0, max(0.0, float(i.fraccion_usada or 0)))
         buenos.append(i)
     r.ingredientes = buenos
+    r.ingredientes = [presentacion_real(i) for i in r.ingredientes]
     r.alergenos = detectar_alergenos(r)
     if r.icono not in ICONOS:
         r.icono = "otro"
@@ -407,6 +489,45 @@ def compras_receta(r: Receta) -> dict:
         (despensa if i.basico_de_despensa else comprar).append(fila)
     return {"comprar": comprar, "despensa": despensa,
             "total": round(sum(f["Precio"] for f in comprar), 2)}
+
+
+def lo_que_usas(i: Ingrediente) -> str:
+    """Cantidad que usa la receta, calculada del paquete (sigue bien al cambiar de personas)."""
+    for unidad in ("g", "ml"):
+        t = _tamano(i.presentacion, unidad)
+        if t:
+            usado = t * i.fraccion_usada
+            if unidad == "g" and re.search(r"\b(ml|cc|litros?|lt)\b", _clave(i.presentacion)):
+                unidad = "ml"
+            return f"{usado:,.0f} {unidad}" if usado >= 10 else f"{usado:.1f} {unidad}"
+    m = re.search(r"(\d+)\s*(unidades?|u\b)|(cubeta|docena|paquete|malla|atado) de (\d+)", _clave(i.presentacion))
+    if m:
+        total = int(m.group(1) or m.group(4))
+        usado = total * i.fraccion_usada
+        return f"{usado:g} unidad" if abs(usado - 1) < 1e-9 else f"{round(usado, 1):g} unidades"
+    if re.search(r"\b(unidad|c/u)\b", _clave(i.presentacion)):
+        usado = i.fraccion_usada
+        return f"{round(usado, 1):g} unidad" + ("es" if round(usado, 1) != 1 else "")
+    return i.cantidad
+
+
+def desglose_receta(r: Receta) -> list[dict]:
+    """Cada ingrediente con lo que usas, lo que compras (paquetes enteros reales) y cuánto sobra."""
+    filas = []
+    for i in r.ingredientes:
+        paquetes = max(1, math.ceil(round(i.fraccion_usada, 3) - 1e-9))
+        sobra = max(0.0, paquetes - i.fraccion_usada)
+        filas.append({
+            "Ingrediente": i.nombre,
+            "Usas": lo_que_usas(i),
+            "Compras": f"{paquetes} × {i.presentacion}",
+            "Precio del paquete": round(i.precio_presentacion_usd, 2),
+            "Total pagado": round(paquetes * i.precio_presentacion_usd, 2),
+            "Vale lo que usas": costo_ingrediente(i),
+            "Te sobra": "nada" if sobra < 0.05 else f"{round(sobra * 100):.0f} % del paquete",
+            "Despensa": "Sí" if i.basico_de_despensa else "",
+        })
+    return filas
 
 
 def costo_menu(recetas: list[Receta]) -> float:
