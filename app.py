@@ -12,6 +12,7 @@ Claves en .streamlit/secrets.toml o en los Secrets de Streamlit Cloud: GEMINI_AP
 """
 
 import os
+import streamlit.components.v1 as componentes
 import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -267,7 +268,6 @@ def pagina_pais():
     s = st.session_state
     pais = s["pais"] or "Ecuador"
     cocina = n.PAISES[pais]
-    boton_atras()
     d.titulo(f"Cocina de {pais}" if pais not in ("Mediterráneo", "Medio Oriente") else f"Cocina del {pais}",
              f"{pais}.", "Primero las más baratas: las marcadas 💰 Económica cuestan $1 o menos por porción.")
     cat = st.segmented_control("Tipo de plato", n.CATEGORIAS, default=s["categoria"], key="cat_sel",
@@ -309,7 +309,6 @@ def pagina_pais():
 
 def pagina_semana():
     menu = st.session_state["menu"]
-    boton_atras()
     d.titulo("Tu plan de la semana", "Mi semana.",
              "Las recetas que elegiste, en una sola lista de compras.")
     if not menu:
@@ -398,6 +397,20 @@ with col_menu:
                       "Pescetariana: con pescado y mariscos, sin carne ni pollo.")
 with col_pagina:
     {"inicio": pagina_inicio, "pais": pagina_pais, "semana": pagina_semana}.get(pagina, pagina_inicio)()
+    if pagina != "inicio":
+        st.write("")
+        boton_atras()
+
+# Al cambiar de página, subir al principio (si no, la nueva página se abre a media altura)
+vista = (pagina, st.session_state["pais"])
+if st.session_state.get("vista_anterior") != vista:
+    st.session_state["vista_anterior"] = vista
+    st.session_state["subidas"] = st.session_state.get("subidas", 0) + 1
+    componentes.html(
+        "<script>/* %d */const d = window.parent.document;"
+        "d.querySelectorAll('[data-testid=\"stMain\"], [data-testid=\"stAppViewContainer\"], section.main')"
+        ".forEach(e => e.scrollTo({top: 0}));window.parent.scrollTo({top: 0});</script>"
+        % st.session_state["subidas"], height=0)
 
 st.divider()
 st.caption("sazona. · hermana de canastas. · IA: Google Gemini · Fotos: [Wikimedia Commons](https://commons.wikimedia.org) · "

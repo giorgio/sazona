@@ -48,9 +48,21 @@ header[data-testid="stHeader"] {{ background: transparent; }}
   background:#fff; border-bottom:1px solid {BORDE}; padding:1.3rem 0; margin-bottom:2.2rem;
   box-shadow:0 0 0 100vmax #fff; clip-path:inset(0 -100vmax); }}
 .sz-logo {{ display:flex; align-items:center; gap:.85rem; }}
-.st-key-logo_wrap {{ position:relative; gap:0 !important; }}
-.st-key-logo_btn {{ position:absolute !important; top:0; left:0; width:280px !important; height:100%; z-index:5; }}
-.st-key-logo_btn button {{ width:100%; height:100%; opacity:0; cursor:pointer; }}
+.st-key-atras button {{ min-height:3.4rem; padding:.7rem 2.2rem; font-size:1.1rem; font-weight:700;
+  border:2px solid {BOTON}; color:{BOTON}; border-radius:14px; }}
+.st-key-atras button p {{ font-size:1.1rem !important; font-weight:700; }}
+.st-key-atras button:hover {{ background:{BOTON}; color:#fff; }}
+.st-key-atras button:hover p {{ color:#fff; }}
+.st-key-sz_cab {{ background:#fff; border-bottom:1px solid {BORDE}; padding:1.3rem 0; margin-bottom:2.2rem;
+  box-shadow:0 0 0 100vmax #fff; clip-path:inset(0 -100vmax); flex-wrap:nowrap !important; }}
+.st-key-sz_cab > div {{ width:auto !important; flex:0 0 auto; }}
+.st-key-sz_cab > div:last-child {{ flex:1 1 auto; text-align:right; }}
+.sz-icono-logo {{ width:48px; height:48px; border-radius:13px; background:{TERRA}; display:grid; place-items:center; }}
+.st-key-logo_btn button {{ padding:0 .2rem !important; min-height:0; background:transparent !important; }}
+.st-key-logo_btn button p {{ font-size:1.95rem !important; font-weight:800 !important; letter-spacing:-.035em;
+  color:{TEXTO} !important; line-height:1.1; }}
+.st-key-logo_btn button p::after {{ content:" ."; color:{TERRA}; }}
+.st-key-logo_btn button:hover p {{ color:{TERRA} !important; }}
 .sz-logo .icono {{ width:48px; height:48px; border-radius:13px; background:{TERRA}; display:grid; place-items:center; }}
 .sz-logo .nombre {{ font-size:1.95rem; font-weight:800; letter-spacing:-.035em; color:{TEXTO}; }}
 .sz-logo .punto {{ color:{TERRA}; }}
@@ -167,7 +179,7 @@ header[data-testid="stHeader"] {{ background: transparent; }}
   .st-key-paises [data-testid="stHorizontalBlock"] {{ flex-direction:row !important; flex-wrap:wrap; gap:.6rem; }}
   .st-key-paises [data-testid="stColumn"] {{ flex:1 1 calc(50% - .3rem) !important; min-width:calc(50% - .3rem) !important; }}
   .sz-lema {{ display:none; }}
-  .sz-cabecera {{ margin-bottom:1.4rem; }}
+  .st-key-sz_cab {{ margin-bottom:1.4rem; }}
   .st-key-tarjeta {{ padding:1.2rem 1rem !important; }}
   .st-key-menu [data-testid="stElementContainer"]:has(hr),
   .st-key-menu [data-testid="stElementContainer"]:has(.sz-menu-nota),
@@ -192,20 +204,12 @@ def aplicar_estilos():
 
 
 def cabecera(ir=None):
-    """Logo + lema. El logo es un botón invisible encima que lleva al inicio."""
-    with st.container(key="logo_wrap"):
-        _cabecera_html()
-        if ir:
-            st.button("Ir al inicio", key="logo_btn", on_click=ir, args=("inicio",), help="Ir al inicio")
-
-
-def _cabecera_html():
-    st.markdown(
-        f"""<div class="sz-cabecera"><div class="sz-logo"><span class="icono">{isotipo_svg('#fff', 30)}</span>
-        <span class="nombre">sazona<span class="punto"> .</span></span></div>
-        <div class="sz-lema">Rico, sano y barato.</div></div>""",
-        unsafe_allow_html=True,
-    )
+    """Logo + lema. La palabra 'sazona' es un botón de verdad que lleva al inicio."""
+    with st.container(key="sz_cab", horizontal=True, vertical_alignment="center", gap="small"):
+        st.markdown(f'<span class="sz-icono-logo">{isotipo_svg("#fff", 30)}</span>', unsafe_allow_html=True)
+        st.button("sazona", key="logo_btn", type="tertiary", on_click=ir, args=("inicio",),
+                  help="Ir al inicio", disabled=ir is None)
+        st.markdown('<div class="sz-lema">Rico, sano y barato.</div>', unsafe_allow_html=True)
 
 
 def titulo(ceja: str, texto: str, sub: str = ""):
