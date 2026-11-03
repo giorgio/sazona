@@ -41,7 +41,7 @@ TONOS_CSS = "\n".join(
 
 CSS = f"""
 <style>
-.block-container {{ max-width: 1240px; padding-top: 0 !important; padding-bottom: 3rem; }}
+.block-container {{ max-width: 1520px; padding-top: 0 !important; padding-bottom: 3rem; }}
 header[data-testid="stHeader"] {{ background: transparent; }}
 
 .sz-cabecera {{ display:flex; justify-content:space-between; align-items:center; gap:1rem;

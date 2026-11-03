@@ -406,7 +406,7 @@ def seccion_sobrantes(lista):
 d.aplicar_estilos()
 d.cabecera(ir)
 pagina = st.session_state["pagina"]
-col_menu, col_pagina = st.columns([1, 3], gap="large")
+col_menu, col_pagina = st.columns([1, 4.2], gap="large")
 with col_menu:
     d.menu("semana" if pagina == "semana" else "inicio", ir, len(st.session_state["menu"]))
     st.selectbox("Tu alimentación", list(n.DIETAS), key="dieta", on_change=sync_dieta, args=("dieta", "dieta_inicio"),
