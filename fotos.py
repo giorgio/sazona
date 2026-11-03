@@ -45,14 +45,16 @@ NO_ES_PLATO = ("field", "paddy", "plant", "farm", "crop", "harvest", "seed", "tr
                "coin", "poster", "advert", "menu", "truck", "farmer", "cooking class", "factory")
 
 
-def es_del_plato(titulo: str, palabras: list[str]) -> bool:
+def es_del_plato(titulo: str, palabras: list[str], minimo: int | None = None) -> bool:
     """La foto sirve solo si su nombre menciona el plato (2 palabras si hay 2 o más) y no es otra cosa."""
     t = (titulo or "").lower().replace("_", " ")
     if any(x in t for x in NO_ES_PLATO):
         return False
     raices = {_raiz(w) for w in palabras}
     aciertos = sum(1 for r in raices if r and r in t)
-    return aciertos >= (2 if len(raices) >= 2 else 1)
+    if minimo is None:
+        minimo = 2 if len(raices) >= 2 else 1
+    return aciertos >= minimo
 
 
 def _texto_plano(valor: str) -> str:
@@ -119,25 +121,43 @@ def avisar_descarga(f: dict, clave: str) -> None:
         pass
 
 
-def foto_unsplash(consulta: str, clave: str) -> dict | None:
-    """Fotos de comida de Unsplash. Se enlazan directo (lo pide Unsplash) y se acredita al fotógrafo."""
+def _unsplash(query: str, clave: str) -> list[dict]:
     try:
-        r = requests.get(UNSPLASH_BUSQUEDA, params={"query": consulta + " food", "per_page": 8,
-                                                     "orientation": "landscape", "content_filter": "high"},
+        r = requests.get(UNSPLASH_BUSQUEDA, params={"query": query, "per_page": 10, "orientation": "landscape",
+                                                     "content_filter": "high"},
                          headers={"Authorization": f"Client-ID {clave}", "Accept-Version": "v1"}, timeout=4)
-        if r.status_code != 200:
-            return None
-        fotos = r.json().get("results") or []
+        return r.json().get("results") or [] if r.status_code == 200 else []
     except (requests.RequestException, ValueError):
-        return None
+        return []
+
+
+def foto_unsplash(consulta: str, clave: str) -> dict | None:
+    """Fotos de comida de Unsplash, en escalones: frase completa -> solo el plato -> ingrediente principal.
+    Se enlazan directo (lo pide Unsplash) y se acredita al fotógrafo."""
     palabras = palabras_plato(consulta)
+    intentos = [consulta]
+    if len(palabras) >= 2:
+        intentos.append(" ".join(palabras[:2]))           # "scrambled eggs", "fried rice"
+        intentos.append(" ".join(palabras[-2:]))          # "lentil salad"
+    if palabras:
+        intentos.append(palabras[0])                      # lo principal: "eggs", "rice"
+    vistos = set()
     def texto(f):
         tags = " ".join(t.get("title", "") for t in (f.get("tags") or []))
         return " ".join([f.get("alt_description") or "", f.get("description") or "", tags])
-    buenas = [f for f in fotos if es_del_plato(texto(f), palabras)]
-    f = (buenas or [None])[0]
-    if not f:                                   # ninguna nombra el plato: mejor sin foto que una equivocada
+    elegida = None
+    for q in intentos:
+        if q in vistos:
+            continue
+        vistos.add(q)
+        fotos = _unsplash(q + " food", clave)
+        buenas = [f for f in fotos if es_del_plato(texto(f), palabras, minimo=1)]
+        if buenas:
+            elegida = buenas[0]
+            break
+    if not elegida:
         return None
+    f = elegida
     u = f.get("user") or {}
     utm = f"?utm_source={APP}&utm_medium=referral"
     avisar_descarga(f, clave)

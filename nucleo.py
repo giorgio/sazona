@@ -57,7 +57,9 @@ class Receta(BaseModel):
     calorias_por_porcion: int
     proteina_g_por_porcion: int
     por_que_es_saludable: str
-    busqueda_foto: str = Field(description="Búsqueda en INGLÉS para encontrar una foto del plato, 3 a 6 palabras")
+    busqueda_foto: str = Field(description=(
+        "Nombre COMÚN del plato en INGLÉS para buscar su foto, 2 a 4 palabras, sin país ni adjetivos: "
+        "p. ej. 'scrambled eggs', 'fried rice egg', 'potato soup', 'lentil stew', 'chicken soup'"))
     icono: str = Field(description="Uno de: " + ", ".join(ICONOS))
     plato_conocido: bool = Field(default=True, description=(
         "True SOLO si es un plato que existe y la gente reconoce por ese nombre en su cocina "
