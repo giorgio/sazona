@@ -28,7 +28,7 @@ st.set_page_config(page_title="sazona.", page_icon=ICONO if os.path.exists(ICONO
 
 ESPERA_ENTRE_CONSULTAS = 6
 TIENDAS_CERCANAS = "https://www.google.com/maps/search/?api=1&query=supermercados+y+mercados+cerca+de+m%C3%AD"
-POR_PAGINA = 3            # recetas que se muestran de una vez
+POR_PAGINA = 8            # recetas que se muestran de una vez
 BASE_PERSONAS = 4         # la IA calcula para 4; la app escala a lo que elija la persona
 MAX_PORCION = 2.5
 TIEMPO_MAX = 60
