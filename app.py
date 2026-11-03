@@ -129,7 +129,7 @@ def cocina_sugerida(dia: str) -> str:
 
 
 @st.cache_data(ttl=7 * 86400, show_spinner=False)
-def foto(consulta: str, plato: str = "", version: int = 5):
+def foto(consulta: str, plato: str = "", version: int = 6):
     """Busca la foto y, si hay clave de IA, la IA mira cada candidata y solo acepta la que es ese plato.
     Si la revisión falla (cuota de la IA), se lanza error para NO guardar 'sin foto' y reintentar luego."""
     verificar = None

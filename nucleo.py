@@ -491,19 +491,32 @@ def foto_coincide(cliente, imagen: bytes, plato: str, busqueda: str = "") -> boo
     from google.genai import types
     ultimo = None
     for modelo in (MODELO_RESPALDO, MODELO_PRINCIPAL):
-        try:
-            resp = cliente.models.generate_content(
-                model=modelo,
-                contents=[types.Part.from_bytes(data=imagen, mime_type="image/jpeg"),
-                          PROMPT_FOTO.format(plato=plato, busqueda=busqueda)],
-                config=types.GenerateContentConfig(temperature=0, max_output_tokens=20),
-            )
-            texto = _clave(getattr(resp, "text", "") or "")
-            return texto.startswith("si")
-        except Exception as e:  # noqa: BLE001
-            ultimo = e
-            if _codigo(e) in (401, 403):
-                break
+        for pensar in (True, False):
+            try:
+                cfg = dict(temperature=0, max_output_tokens=400)
+                if pensar:                                   # sin "pensar": responde directo y no gasta la respuesta
+                    cfg["thinking_config"] = types.ThinkingConfig(thinking_level="minimal")
+                resp = cliente.models.generate_content(
+                    model=modelo,
+                    contents=[types.Part.from_bytes(data=imagen, mime_type="image/jpeg"),
+                              PROMPT_FOTO.format(plato=plato, busqueda=busqueda)],
+                    config=types.GenerateContentConfig(**cfg),
+                )
+                texto = _clave(getattr(resp, "text", "") or "")
+                if not texto:
+                    raise ValueError("respuesta vacía")
+                ok = texto.lstrip("¿¡*\" '").startswith("si")
+                print(f"[foto] {plato!r}: {'SI' if ok else 'NO'} ({modelo})", flush=True)
+                return ok
+            except Exception as e:  # noqa: BLE001
+                ultimo = e
+                if _codigo(e) in (401, 403):
+                    raise ErrorIA("La clave de la IA no es válida.") from e
+                if _codigo(e) == 400 and pensar:
+                    continue                                 # el modelo no acepta ese ajuste: probar sin él
+                if _codigo(e) in (404, 429):
+                    break
+    print(f"[foto] no se pudo revisar {plato!r}: {ultimo}", flush=True)
     raise ErrorIA(f"No se pudo revisar la foto: {ultimo}")
 
 

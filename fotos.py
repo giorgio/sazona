@@ -228,6 +228,8 @@ def buscar_foto(consulta: str, clave_pexels: str | None = None, clave_unsplash: 
             f = foto_commons(corta)
         if f:
             candidatas.append(f)
+    print(f"[foto] {consulta!r}: {len(candidatas)} candidatas "
+          f"({', '.join(sorted({c.get('fuente', '?') for c in candidatas})) or 'ninguna'})", flush=True)
     for c in candidatas:
         if verificar is not None and not verificar(c.get("url_chica") or c["url"]):
             continue
