@@ -50,16 +50,16 @@ def foto_commons(consulta: str) -> dict | None:
         r = requests.get(
             COMMONS_API,
             params={"action": "query", "format": "json", "generator": "search", "gsrnamespace": 6,
-                    "gsrlimit": 15, "gsrsearch": f"{consulta} food filetype:bitmap", "prop": "imageinfo",
+                    "gsrlimit": 10, "gsrsearch": f"{consulta} food filetype:bitmap", "prop": "imageinfo",
                     "iiprop": "url|extmetadata", "iiurlwidth": 900,
                     "iiextmetadatafilter": "Artist|LicenseShortName|LicenseUrl"},
             headers={"User-Agent": USER_AGENT},
-            timeout=8,
+            timeout=4,
         )
         r.raise_for_status()
         paginas = (r.json().get("query") or {}).get("pages") or {}
     except (requests.RequestException, ValueError):
-        return None
+        return False                                    # sin conexión: no vale la pena reintentar
     palabras = palabras_plato(consulta)
     for p in sorted(paginas.values(), key=lambda x: x.get("index", 99)):
         if not es_del_plato(p.get("title", ""), palabras):
@@ -79,7 +79,7 @@ def foto_commons(consulta: str) -> dict | None:
 def foto_pexels(consulta: str, clave: str) -> dict | None:
     try:
         r = requests.get(PEXELS_BUSQUEDA, params={"query": consulta, "per_page": 1, "orientation": "landscape"},
-                         headers={"Authorization": clave}, timeout=8)
+                         headers={"Authorization": clave}, timeout=4)
         if r.status_code != 200:
             return None
         f = (r.json().get("photos") or [None])[0]
@@ -103,6 +103,6 @@ def buscar_foto(consulta: str, clave_pexels: str | None = None) -> dict | None:
             return f
     f = foto_commons(consulta)
     corta = " ".join(palabras_plato(consulta)[-2:])     # p. ej. "Mexican lentil salad" -> "lentil salad"
-    if f is None and corta and corta != consulta.lower():
+    if f is None and corta and corta != consulta.lower():   # solo si la primera respondió (f None, no False)
         f = foto_commons(corta)
-    return f                                            # None: la app muestra el dibujo de la marca
+    return f or None                                           # None: la app muestra el dibujo de la marca
