@@ -32,7 +32,7 @@ BASE_PERSONAS = 4         # la IA calcula para 4; la app escala a lo que elija l
 MAX_PORCION = 2.5
 TIEMPO_MAX = 60
 INICIALES = {"pagina": "inicio", "pais": None, "extra": {}, "visibles": {}, "menu": [], "ideas_sobra": [],
-             "personas": 2, "historial": [], "categoria": "Plato fuerte", "dieta": "Todas"}
+             "personas": 2, "historial": [], "categoria": "Plato fuerte", "dieta": "Todas", "dieta_inicio": "Todas"}
 for _k, _v in INICIALES.items():
     st.session_state.setdefault(_k, _v)
 
@@ -58,6 +58,13 @@ def atras():
         s["historial"] = s["historial"][:-1]
     else:
         s["pagina"] = "inicio"
+
+
+def sync_dieta(desde, hacia):
+    """Los botones de dieta del inicio y el selector del menú siempre muestran lo mismo."""
+    v = st.session_state.get(desde) or "Todas"          # si se deselecciona el botón, vuelve a Todas
+    st.session_state[desde] = v
+    st.session_state[hacia] = v
 
 
 def boton_atras(clave="atras"):
@@ -214,6 +221,9 @@ def cuadricula(recetas, prefijo: str):
 def pagina_inicio():
     d.titulo("Cocina rico, gasta poco", "¿Qué cocinamos hoy?",
              "Recetas de todo el mundo con ingredientes de aquí, cada una con su precio por porción.")
+    st.markdown('<p class="sz-seccion">¿Cómo comes?</p>', unsafe_allow_html=True)
+    st.segmented_control("Tu alimentación", list(n.DIETAS), key="dieta_inicio", on_change=sync_dieta,
+                         args=("dieta_inicio", "dieta"), label_visibility="collapsed", width="stretch")
     hueco_sugerida = st.container()
 
     st.markdown('<p class="sz-seccion">Elige un país</p>', unsafe_allow_html=True)
@@ -383,7 +393,7 @@ pagina = st.session_state["pagina"]
 col_menu, col_pagina = st.columns([1, 3], gap="large")
 with col_menu:
     d.menu("semana" if pagina == "semana" else "inicio", ir, len(st.session_state["menu"]))
-    st.selectbox("Tu alimentación", list(n.DIETAS), key="dieta",
+    st.selectbox("Tu alimentación", list(n.DIETAS), key="dieta", on_change=sync_dieta, args=("dieta", "dieta_inicio"),
                  help="Vegetariana: con lácteos, sin huevo. Ovolactovegetariana: con huevo y lácteos. "
                       "Pescetariana: con pescado y mariscos, sin carne ni pollo.")
 with col_pagina:
