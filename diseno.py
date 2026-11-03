@@ -106,10 +106,11 @@ header[data-testid="stHeader"] {{ background: transparent; }}
 .sz-desc {{ font-size:.92rem; color:{GRIS}; line-height:1.45; margin:0 0 .7rem; min-height:2.7em; }}
 .sz-precio b {{ display:block; font-size:1.75rem; font-weight:800; color:{TERRA}; letter-spacing:-.03em; line-height:1.1; }}
 .sz-precios {{ display:flex; gap:.6rem; margin:.2rem 0 .3rem; }}
-.sz-precios .sz-precio {{ flex:1; background:{TERRA_CLARO}; border-radius:12px; padding:.5rem .7rem; }}
+.sz-precios .sz-precio {{ flex:1 1 0; min-width:0; background:{TERRA_CLARO}; border-radius:12px; padding:.45rem .6rem; }}
+.sz-precios .sz-precio span {{ font-size:.78rem; line-height:1.25; overflow-wrap:normal; word-break:normal; hyphens:none; }}
 .sz-precios .sz-precio.total {{ background:{BOTON}; }}
 .sz-precios .sz-precio.total b, .sz-precios .sz-precio.total span {{ color:#fff; }}
-.sz-precios .sz-precio b {{ font-size:1.45rem; }}
+.sz-precios .sz-precio b {{ font-size:1.3rem; }}
 .sz-precio span {{ display:block; font-size:.86rem; color:{GRIS}; margin-top:.1rem; }}
 [class*="st-key-rc_"] .stButton {{ margin-top:-.2rem; }}
 .sz-nutri {{ font-size:.82rem; color:{GRIS}; margin:.2rem 0 .7rem; }}
@@ -260,7 +261,7 @@ def precios_tarjeta(por_porcion, total, personas) -> str:
     if total is None:
         return html_p
     return (f'<div class="sz-precios">{html_p}'
-            f'<div class="sz-precio total"><b>${total:.2f}</b><span>todos los ingredientes</span></div></div>')
+            f'<div class="sz-precio total"><b>${total:.2f}</b><span>en total</span></div></div>')
 
 
 def info_receta(r, por_porcion: float | None = None, total: float | None = None, personas: int | None = None):

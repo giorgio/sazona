@@ -221,10 +221,13 @@ def tarjeta(r, clave: str):
                       args=(n.ajustar_porciones(r, st.session_state["personas"]),), width="stretch")
 
 
+POR_FILA = 4
+
+
 def cuadricula(recetas, prefijo: str):
-    for fila in range(0, len(recetas), 3):
-        cols = st.columns(3, gap="medium")
-        for j, r in enumerate(recetas[fila:fila + 3]):
+    for fila in range(0, len(recetas), POR_FILA):
+        cols = st.columns(POR_FILA, gap="small")
+        for j, r in enumerate(recetas[fila:fila + POR_FILA]):
             with cols[j]:
                 tarjeta(r, f"{prefijo}_{fila + j}")
 
