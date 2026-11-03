@@ -129,7 +129,9 @@ PEDIDO
 REGLAS
 1. SOLO PLATOS QUE EXISTEN DE VERDAD en esas cocinas, con el nombre por el que la gente los conoce
    (busca en tu memoria platos tradicionales o caseros conocidos). PROHIBIDO inventar platos, mezclas raras o
-   nombres creativos como "Bowl de arroz con salsa de la casa". Si dudas de que un plato exista, no lo pongas.
+   nombres creativos como "Bowl de arroz con salsa de la casa". El nombre es SOLO el nombre del plato, sin
+   adjetivos de marketing (nada de "saludable", "express", "fácil", "delicia", "al estilo", "fusión").
+   Si dudas de que un plato exista, no lo pongas.
    Puedes ADAPTARLOS con ingredientes que se consiguen en Ecuador.
    Si un ingrediente es difícil de conseguir, cámbialo por uno local y menciónalo en un paso.
 2. Saludables: con verduras o legumbres, sin frituras profundas, poco azúcar y porciones razonables.
@@ -345,6 +347,17 @@ def enteros(i: Ingrediente) -> Ingrediente:
     return i
 
 
+# Palabras típicas de nombres inventados ("Bowl tropical de la casa", "Delicia express"...)
+NOMBRE_INVENTADO = re.compile(r"\b(bowl|fusi[oó]n|delicias?|explosi[oó]n|sorpresa|express|exprés|de la casa|"
+                              r"al estilo|estilo|toque|twist|power|fit|saludable|light|especial|m[aá]gic[oa]|"
+                              r"tropical(?! fruit)|gourmet|r[aá]pid[oa]|f[aá]cil|caser[oa] de|versi[oó]n|reinventad[oa])\b",
+                              re.IGNORECASE)
+
+
+def nombre_inventado(nombre: str) -> bool:
+    return bool(NOMBRE_INVENTADO.search(nombre or ""))
+
+
 def limpiar_receta(r: Receta) -> Receta:
     """Corrige datos imposibles que a veces devuelve la IA."""
     r.porciones = max(1, int(r.porciones or 1))
@@ -484,7 +497,7 @@ def buscar_recetas(cliente, cocinas, personas, max_porcion, tiempo, tipos=(), ci
         if not r.ingredientes or not r.pasos:
             descartadas += 1
             continue
-        if not getattr(r, "plato_conocido", True):
+        if not getattr(r, "plato_conocido", True) or nombre_inventado(r.nombre):
             descartadas += 1
             continue
         if not cumple_dieta(r, dieta):

@@ -105,7 +105,8 @@ def esperar_turno():
 
 @st.cache_data(ttl=86400, show_spinner=False, max_entries=60)
 def recetas_del_dia(cocina: str, dia: str, categoria: str = "Plato fuerte", dieta: str = "Todas",
-                    cuantas: int = POR_PAGINA):
+                    cuantas: int = POR_PAGINA, version: int = 2):
+    # version: subirla borra las recetas guardadas (p. ej. tras cambiar las reglas de la IA)
     """Recetas de una cocina y categoría. Se guardan un día y se comparten entre visitantes (ahorra cuota).
     Se piden unas de más porque algunas se descartan (precio, dieta); si aun así faltan, se pide otra tanda."""
     recetas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION, TIEMPO_MAX,
