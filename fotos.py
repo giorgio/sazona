@@ -54,10 +54,37 @@ TIPO_PLATO = {"salad", "soup", "stew", "sandwich", "omelette", "omelet", "tortil
               "toast", "breakfast", "plantain", "locro", "encebollado", "bolon", "menestra"}
 
 
+# La base y la proteína tienen que coincidir: arroz no es fideo, pollo no es pescado
+GRUPOS = [
+    {"rice": ("rice",), "noodles": ("noodle", "ramen", "lo mein", "chow mein"), "pasta": ("pasta", "spaghetti", "macaroni", "penne", "lasagna"),
+     "potato": ("potato", "fries"), "bread": ("bread", "toast", "sandwich", "bun"), "quinoa": ("quinoa",),
+     "plantain": ("plantain",), "tortilla": ("tortilla", "taco", "burrito")},
+    {"chicken": ("chicken",), "beef": ("beef", "steak"), "pork": ("pork", "bacon", "ham"), "fish": ("fish", "salmon", "tuna", "tilapia"),
+     "shrimp": ("shrimp", "prawn"), "egg": ("egg",)},
+]
+
+
+def _choca(t: str, palabras: list[str]) -> bool:
+    """True si la foto no tiene la base/proteína de la receta o muestra otra que choca con ella."""
+    q = " ".join(palabras)
+    bases, proteinas = GRUPOS
+    for grupo, estricto in ((bases, False), (proteinas, True)):
+        en_receta = {k for k, vs in grupo.items() if any(v in q for v in vs)}
+        en_foto = {k for k, vs in grupo.items() if any(v in t for v in vs)}
+        if en_receta and not (en_receta & en_foto):
+            return True                     # la receta es de arroz y la foto no tiene arroz
+        extra = en_foto - en_receta
+        if extra and (en_receta or estricto):
+            return True                     # arroz -> fideos en la foto; ensalada sin carne -> pollo en la foto
+    return False
+
+
 def es_del_plato(titulo: str, palabras: list[str], minimo: int | None = None) -> bool:
     """La foto sirve solo si su nombre menciona el plato (2 palabras si hay 2 o más) y no es otra cosa."""
     t = (titulo or "").lower().replace("_", " ")
     if any(x in t for x in NO_ES_PLATO):
+        return False
+    if _choca(t, palabras):
         return False
     tipos = [w for w in palabras if w in TIPO_PLATO]
     if tipos and not any(_raiz(w) in t for w in tipos):
@@ -143,60 +170,68 @@ def _unsplash(query: str, clave: str) -> list[dict]:
         return []
 
 
-def foto_unsplash(consulta: str, clave: str) -> dict | None:
-    """Fotos de comida de Unsplash, en escalones: frase completa -> solo el plato -> ingrediente principal.
-    Se enlazan directo (lo pide Unsplash) y se acredita al fotógrafo."""
+def _texto_unsplash(f: dict) -> str:
+    tags = " ".join(t.get("title", "") for t in (f.get("tags") or []))
+    return " ".join([f.get("alt_description") or "", f.get("description") or "", tags]).lower()
+
+
+GASTRO = ("plate", "bowl", "dish", "served", "table", "close-up", "closeup", "meal", "food photography",
+          "restaurant", "plated", "breakfast", "lunch", "dinner")
+
+
+def candidatos_unsplash(consulta: str, clave: str, maximo: int = 3) -> list[dict]:
+    """Varias fotos posibles del plato, de la más probable a la menos (luego la IA las revisa una por una)."""
     palabras = palabras_plato(consulta)
     intentos = [consulta]
     if len(palabras) >= 2:
-        intentos.append(" ".join(palabras[:2]))           # "scrambled eggs", "fried rice"
-        intentos.append(" ".join(palabras[-2:]))          # "lentil salad"
-    if palabras:
-        intentos.append(palabras[0])                      # lo principal: "eggs", "rice"
-    vistos = set()
-    def texto(f):
-        tags = " ".join(t.get("title", "") for t in (f.get("tags") or []))
-        return " ".join([f.get("alt_description") or "", f.get("description") or "", tags])
-    elegida = None
+        intentos += [" ".join(palabras[:2]), " ".join(palabras[-2:])]
+    vistos, salida, ids = set(), [], set()
     for q in intentos:
-        if q in vistos:
+        if q in vistos or len(salida) >= maximo:
             continue
         vistos.add(q)
         fotos = _unsplash(q + " food photography plated", clave) or _unsplash(q + " food", clave)
-        buenas = [f for f in fotos if es_del_plato(texto(f), palabras, minimo=1)]
-        # primero las que se ven como foto de restaurante: plato servido, en mesa, de cerca
-        GASTRO = ("plate", "bowl", "dish", "served", "table", "close-up", "closeup", "meal", "food photography",
-                  "restaurant", "plated", "breakfast", "lunch", "dinner")
-        buenas.sort(key=lambda f: -sum(g in texto(f).lower() for g in GASTRO))
-        if buenas:
-            elegida = buenas[0]
-            break
-    if not elegida:
-        return None
-    f = elegida
-    u = f.get("user") or {}
-    utm = f"?utm_source={APP}&utm_medium=referral"
-    avisar_descarga(f, clave)
-    return {"url": (f.get("urls") or {}).get("regular"), "autor": u.get("name") or "Unsplash",
-            "pagina": ((u.get("links") or {}).get("html") or "https://unsplash.com") + utm,
-            "licencia": "", "licencia_url": "", "fuente": "Unsplash",
-            "fuente_url": "https://unsplash.com/" + utm}
+        fotos = [f for f in fotos if f.get("id") not in ids and not any(x in _texto_unsplash(f) for x in NO_ES_PLATO)]
+        # primero las que nombran el plato y se ven servidas
+        fotos.sort(key=lambda f: (-es_del_plato(_texto_unsplash(f), palabras, minimo=1),
+                                  -sum(g in _texto_unsplash(f) for g in GASTRO)))
+        for f in fotos[:maximo - len(salida)]:          # una sola búsqueda suele bastar (ahorra cuota)
+            ids.add(f.get("id"))
+            u = f.get("user") or {}
+            utm = f"?utm_source={APP}&utm_medium=referral"
+            salida.append({"url": (f.get("urls") or {}).get("regular"),
+                           "url_chica": (f.get("urls") or {}).get("small") or (f.get("urls") or {}).get("regular"),
+                           "autor": u.get("name") or "Unsplash",
+                           "pagina": ((u.get("links") or {}).get("html") or "https://unsplash.com") + utm,
+                           "licencia": "", "licencia_url": "", "fuente": "Unsplash",
+                           "fuente_url": "https://unsplash.com/" + utm, "_crudo": f})
+    return salida[:maximo]
 
 
-def buscar_foto(consulta: str, clave_pexels: str | None = None, clave_unsplash: str | None = None) -> dict | None:
-    """Devuelve {'url','autor','pagina','licencia','licencia_url','fuente'} o None."""
+def buscar_foto(consulta: str, clave_pexels: str | None = None, clave_unsplash: str | None = None,
+                verificar=None) -> dict | None:
+    """Devuelve {'url','autor','pagina','licencia','licencia_url','fuente'} o None.
+    verificar(url_imagen) -> bool: si se pasa, cada candidata se muestra solo si la IA confirma que es el plato."""
     if not consulta:
         return None
+    candidatas = []
     if clave_unsplash:
-        f = foto_unsplash(consulta, clave_unsplash)
-        if f and f.get("url"):
-            return f
+        candidatas += candidatos_unsplash(consulta, clave_unsplash)
     if clave_pexels:
         f = foto_pexels(consulta, clave_pexels)
         if f and f.get("url"):
-            return f
-    f = foto_commons(consulta)
-    corta = " ".join(palabras_plato(consulta)[-2:])     # p. ej. "Mexican lentil salad" -> "lentil salad"
-    if f is None and corta and corta != consulta.lower():   # solo si la primera respondió (f None, no False)
-        f = foto_commons(corta)
-    return f or None                                           # None: la app muestra el dibujo de la marca
+            candidatas.append(f)
+    if not candidatas or verificar is None:
+        f = foto_commons(consulta)
+        corta = " ".join(palabras_plato(consulta)[-2:])
+        if f is None and corta and corta != consulta.lower():
+            f = foto_commons(corta)
+        if f:
+            candidatas.append(f)
+    for c in candidatas:
+        if verificar is not None and not verificar(c.get("url_chica") or c["url"]):
+            continue
+        if c.get("fuente") == "Unsplash" and clave_unsplash:
+            avisar_descarga(c.get("_crudo") or {}, clave_unsplash)
+        return {k: v for k, v in c.items() if not k.startswith("_")}
+    return None                                         # None: la app muestra el dibujo de la marca

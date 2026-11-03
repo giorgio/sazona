@@ -480,6 +480,33 @@ def llamar_gemini(cliente, prompt: str, esquema, modelos=(MODELO_PRINCIPAL, MODE
     raise ErrorIA("La IA no devolvió recetas válidas. Intenta de nuevo.")
 
 
+PROMPT_FOTO = """Mira la foto. ¿Muestra el plato "{plato}" ({busqueda}) YA PREPARADO Y SERVIDO, de forma que
+una persona lo reconocería como ese plato? Responde NO si muestra otro plato (por ejemplo fideos en vez de arroz),
+ingredientes crudos o sueltos, personas o lugares como tema principal, o si no se ve bien la comida.
+Responde solo SI o NO."""
+
+
+def foto_coincide(cliente, imagen: bytes, plato: str, busqueda: str = "") -> bool:
+    """La IA mira la foto y dice si de verdad es ese plato (para no mostrar fotos que no tienen sentido)."""
+    from google.genai import types
+    ultimo = None
+    for modelo in (MODELO_RESPALDO, MODELO_PRINCIPAL):
+        try:
+            resp = cliente.models.generate_content(
+                model=modelo,
+                contents=[types.Part.from_bytes(data=imagen, mime_type="image/jpeg"),
+                          PROMPT_FOTO.format(plato=plato, busqueda=busqueda)],
+                config=types.GenerateContentConfig(temperature=0, max_output_tokens=20),
+            )
+            texto = _clave(getattr(resp, "text", "") or "")
+            return texto.startswith("si")
+        except Exception as e:  # noqa: BLE001
+            ultimo = e
+            if _codigo(e) in (401, 403):
+                break
+    raise ErrorIA(f"No se pudo revisar la foto: {ultimo}")
+
+
 def buscar_recetas(cliente, cocinas, personas, max_porcion, tiempo, tipos=(), ciudad="Guayaquil",
                    excluir=(), sobrantes=(), cantidad=RECETAS_POR_BUSQUEDA, categoria="", dieta="Todas"):
     """Devuelve (recetas dentro del presupuesto ordenadas por precio, cuántas se descartaron)."""
