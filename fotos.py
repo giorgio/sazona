@@ -27,17 +27,30 @@ NO_PLATO = {"mexican", "ecuadorian", "ecuador", "italian", "italy", "chinese", "
 
 def palabras_plato(consulta: str) -> list[str]:
     ws = re.findall(r"[a-záéíóúñ]+", (consulta or "").lower())
-    return [w for w in ws if len(w) > 3 and w not in NO_PLATO]
+    return [w for w in ws if len(w) > 2 and w not in NO_PLATO]
 
 
 def _raiz(w: str) -> str:
     return w[:-3] if w.endswith("ies") else w[:-2] if w.endswith("es") and len(w) > 5 else w.rstrip("s")
 
 
+# Fotos que NO son un plato servido aunque nombren el ingrediente (arrozal, mercado, planta...)
+NO_ES_PLATO = ("field", "paddy", "plant", "farm", "crop", "harvest", "seed", "tree", "flower", "leaf", "leaves",
+               "market", "stall", "vendor", "shop", "store", "street", "map", "flag", "logo", "icon", "sign",
+               "label", "package", "packaging", "bag", "sack", "building", "church", "people", "portrait",
+               "woman", "man ", "girl", "boy", "child", "festival", "statue", "museum", "drawing", "illustration",
+               "diagram", "chart", "plantation", "cultivation", "garden", "raw", "kernel", "grain", "stamp",
+               "coin", "poster", "advert", "menu", "truck", "farmer", "cooking class", "factory")
+
+
 def es_del_plato(titulo: str, palabras: list[str]) -> bool:
-    """La foto sirve solo si su nombre menciona el plato o un ingrediente buscado."""
-    t = (titulo or "").lower()
-    return any(_raiz(w) in t for w in palabras)
+    """La foto sirve solo si su nombre menciona el plato (2 palabras si hay 2 o más) y no es otra cosa."""
+    t = (titulo or "").lower().replace("_", " ")
+    if any(x in t for x in NO_ES_PLATO):
+        return False
+    raices = {_raiz(w) for w in palabras}
+    aciertos = sum(1 for r in raices if r and r in t)
+    return aciertos >= (2 if len(raices) >= 2 else 1)
 
 
 def _texto_plano(valor: str) -> str:
