@@ -59,6 +59,10 @@ class Receta(BaseModel):
     por_que_es_saludable: str
     busqueda_foto: str = Field(description="Búsqueda en INGLÉS para encontrar una foto del plato, 3 a 6 palabras")
     icono: str = Field(description="Uno de: " + ", ".join(ICONOS))
+    plato_conocido: bool = Field(default=True, description=(
+        "True SOLO si es un plato que existe y la gente reconoce por ese nombre en su cocina "
+        "(p. ej. 'Locro de papa', 'Arroz con menestra', 'Tortilla de verde', 'Spaghetti al pomodoro'). "
+        "False si es una mezcla inventada o un nombre creado para la ocasión."))
     alergenos: list[str] = Field(default_factory=list, description=(
         "Alérgenos comunes que contiene la receta, solo de esta lista: Gluten, Lácteos, Huevo, Maní, "
         "Frutos secos, Soya, Pescado, Mariscos, Ajonjolí. Lista vacía si no tiene ninguno."))
@@ -123,7 +127,10 @@ PEDIDO
 - No repitas estas recetas: {excluir}
 {extra}
 REGLAS
-1. Recetas reales de esas cocinas, ADAPTADAS con ingredientes que se consiguen en Ecuador.
+1. SOLO PLATOS QUE EXISTEN DE VERDAD en esas cocinas, con el nombre por el que la gente los conoce
+   (busca en tu memoria platos tradicionales o caseros conocidos). PROHIBIDO inventar platos, mezclas raras o
+   nombres creativos como "Bowl de arroz con salsa de la casa". Si dudas de que un plato exista, no lo pongas.
+   Puedes ADAPTARLOS con ingredientes que se consiguen en Ecuador.
    Si un ingrediente es difícil de conseguir, cámbialo por uno local y menciónalo en un paso.
 2. Saludables: con verduras o legumbres, sin frituras profundas, poco azúcar y porciones razonables.
 3. Para cada ingrediente: la presentación en que se vende en Ecuador, su precio estimado completo y
@@ -425,7 +432,7 @@ def llamar_gemini(cliente, prompt: str, esquema, modelos=(MODELO_PRINCIPAL, MODE
                         system_instruction=SISTEMA,
                         response_mime_type="application/json",
                         response_schema=esquema,
-                        temperature=0.7,
+                        temperature=0.4,
                         max_output_tokens=12000,
                         thinking_config=types.ThinkingConfig(thinking_level=razonamiento) if usar_nivel else None,
                     ),
@@ -475,6 +482,9 @@ def buscar_recetas(cliente, cocinas, personas, max_porcion, tiempo, tipos=(), ci
     for r in cat.recetas:
         r = ajustar_porciones(limpiar_receta(r), personas)
         if not r.ingredientes or not r.pasos:
+            descartadas += 1
+            continue
+        if not getattr(r, "plato_conocido", True):
             descartadas += 1
             continue
         if not cumple_dieta(r, dieta):
