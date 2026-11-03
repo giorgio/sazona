@@ -100,11 +100,21 @@ def esperar_turno():
 
 
 @st.cache_data(ttl=86400, show_spinner=False, max_entries=60)
-def recetas_del_dia(cocina: str, dia: str, categoria: str = "Plato fuerte", dieta: str = "Todas"):
-    """Recetas de una cocina y categoría. Se guardan un día y se comparten entre visitantes (ahorra cuota)."""
+def recetas_del_dia(cocina: str, dia: str, categoria: str = "Plato fuerte", dieta: str = "Todas",
+                    cuantas: int = POR_PAGINA):
+    """Recetas de una cocina y categoría. Se guardan un día y se comparten entre visitantes (ahorra cuota).
+    Se piden unas de más porque algunas se descartan (precio, dieta); si aun así faltan, se pide otra tanda."""
     recetas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION, TIEMPO_MAX,
-                                  cantidad=POR_PAGINA, categoria=categoria, dieta=dieta)
-    return recetas
+                                  cantidad=cuantas + 3, categoria=categoria, dieta=dieta)
+    if len(recetas) < cuantas:
+        try:
+            mas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION, TIEMPO_MAX,
+                                      cantidad=cuantas - len(recetas) + 3, categoria=categoria, dieta=dieta,
+                                      excluir=[r.nombre for r in recetas])
+            recetas = sorted(recetas + mas, key=n.costo_porcion)
+        except n.ErrorIA:
+            pass
+    return recetas[:cuantas]
 
 
 def cocina_sugerida(dia: str) -> str:
@@ -294,7 +304,7 @@ def pagina_pais():
                 try:
                     nuevas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION,
                                                  TIEMPO_MAX, excluir=[r.nombre for r in recetas],
-                                                 cantidad=POR_PAGINA, categoria=cat, dieta=dieta)
+                                                 cantidad=POR_PAGINA + 3, categoria=cat, dieta=dieta)
                 except n.ErrorIA as e:
                     st.error(str(e))
                     return
