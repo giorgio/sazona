@@ -1,4 +1,4 @@
-"""Lógica de sazón. (sin interfaz): recetas, costos, menú de la semana y sobrantes.
+"""Lógica de sazona. (sin interfaz): recetas, costos, menú de la semana y sobrantes.
 
 La IA propone recetas con sus ingredientes y el precio estimado de cada
 presentación; la app calcula el costo de cada receta y por porción, arma la
@@ -8,6 +8,7 @@ lista de compras en paquetes enteros y detecta lo que sobra.
 from __future__ import annotations
 
 import json
+import re
 import math
 import time
 import unicodedata
@@ -58,6 +59,36 @@ class Receta(BaseModel):
     por_que_es_saludable: str
     busqueda_foto: str = Field(description="Búsqueda en INGLÉS para encontrar una foto del plato, 3 a 6 palabras")
     icono: str = Field(description="Uno de: " + ", ".join(ICONOS))
+    alergenos: list[str] = Field(default_factory=list, description=(
+        "Alérgenos comunes que contiene la receta, solo de esta lista: Gluten, Lácteos, Huevo, Maní, "
+        "Frutos secos, Soya, Pescado, Mariscos, Ajonjolí. Lista vacía si no tiene ninguno."))
+
+
+ECONOMICA = 1.00   # USD por porción: desde aquí abajo la receta se marca como "Económica"
+
+
+def es_economica(por_porcion: float) -> bool:
+    return por_porcion <= ECONOMICA
+
+
+CATEGORIAS = ["Plato fuerte", "Sopas", "Ensaladas", "Desayunos", "Entradas", "Postres"]
+DESCRIPCION_CATEGORIA = {
+    "Plato fuerte": "plato principal de almuerzo o merienda, con proteína y acompañante",
+    "Sopas": "sopas, caldos, cremas o locros",
+    "Ensaladas": "ensaladas completas o de acompañante, frescas",
+    "Desayunos": "desayunos o meriendas ligeras",
+    "Entradas": "entradas, piqueos o bocaditos para compartir",
+    "Postres": "postres sanos, con fruta y poco azúcar",
+}
+
+
+DIETAS = {
+    "Todas": "",
+    "Vegana": "VEGANA: nada de origen animal (sin carne, pescado, mariscos, huevo, lácteos ni miel)",
+    "Vegetariana": "VEGETARIANA: sin carne, pollo, pescado ni mariscos; puede llevar lácteos, sin huevo",
+    "Ovolactovegetariana": "OVOLACTOVEGETARIANA: sin carne, pollo, pescado ni mariscos; sí huevo y lácteos",
+    "Pescetariana": "PESCETARIANA: sin carne roja ni pollo; sí pescado, mariscos, huevo y lácteos",
+}
 
 
 class Catalogo(BaseModel):
@@ -69,7 +100,7 @@ class Catalogo(BaseModel):
 # ---------------------------------------------------------------------------
 
 SISTEMA = (
-    "Eres el cocinero de sazón., una app de recetas sanas y baratas para hogares de Ecuador. "
+    "Eres el cocinero de sazona., una app de recetas sanas y baratas para hogares de Ecuador. "
     "Conoces cocinas de todo el mundo y las adaptas con ingredientes que se consiguen en mercados y "
     "supermercados ecuatorianos (Tía, Mi Comisariato, Supermaxi, Akí, TuTi, mercados municipales). "
     "Trabajas en USD y tus precios son ESTIMACIONES realistas, nunca exactas. No das dietas médicas "
@@ -84,7 +115,7 @@ PEDIDO
 - Costo máximo por porción: {max_porcion:.2f} USD
 - Tiempo máximo: {tiempo} minutos
 - Tipo: {tipos}
-- Ciudad: {ciudad}
+{categoria}{dieta}- Ciudad: {ciudad}
 - No repitas estas recetas: {excluir}
 {extra}
 REGLAS
@@ -100,6 +131,9 @@ REGLAS
    libra de arveja o habas tiernas 1.00-1.50. Los granos secos y legumbres en funda de supermercado
    (fréjol, lenteja, garbanzo) casi siempre cuestan más de 1 USD la funda.
 5. Con esos precios reales, el costo por porción debería quedar en {max_porcion:.2f} USD o menos.
+   PRIORIZA INGREDIENTES BARATOS de mercado ecuatoriano: arroz, papa, yuca, verde, maduro, choclo, fréjol,
+   lenteja, arveja, huevo, pollo, atún, avena, zanahoria, col, tomate y frutas de temporada. Al menos la
+   mitad de las recetas debe costar menos de {economica:.2f} USD por porción.
 6. Marca sal, pimienta, aceite y condimentos secos como basico_de_despensa.
 7. Pasos cortos (máximo 8), pensados para alguien que cocina poco.
 8. Calorías y proteína son aproximadas por porción."""
@@ -138,6 +172,43 @@ def validar_busqueda(cocinas: list[str], personas: int, max_porcion: float, tiem
 # Costos (los calcula la app, no la IA)
 # ---------------------------------------------------------------------------
 
+# Alérgenos: lo que dice la IA + revisión por palabras en los ingredientes (por si la IA se olvida)
+ALERGENOS = {
+    "Gluten": r"\b(trigo|harina(?! de (maiz|arroz|yuca|platano|coco|almendra|garbanzo))|pan|panes|fideos?|"
+              r"spaghetti|espagueti|tallarin(es)?|macarron(es)?|lasana|pasta(?! de (tomate|aji|mani))|"
+              r"cebada|centeno|cuscus|galletas?|seitan|apanado|empanizado|pan rallado)\b",
+    "Lácteos": r"\b(leche(?! de (coco|almendras?|soya|soja|avena|arroz))|quesos?|quesillo|yogur|yogurt|"
+               r"crema de leche|nata|mantequilla(?! de mani)|requeson|suero de leche)\b",
+    "Huevo": r"\b(huevos?|claras?|yemas?|mayonesa)\b",
+    "Maní": r"\b(mani|cacahuates?|mantequilla de mani)\b",
+    "Frutos secos": r"\b(nuez|nueces|almendras?|avellanas?|pistachos?|anacardos?|maranon|castanas?)\b",
+    "Soya": r"\b(soya|soja|tofu|edamame|tempeh)\b",
+    "Pescado": r"\b(pescado|atun|sardinas?|tilapia|corvina|salmon|bacalao|albacora|picudo|dorado|merluza|"
+               r"trucha|anchoas?)\b",
+    "Mariscos": r"\b(camaron(es)?|langostinos?|conchas?|mejillon(es)?|calamar(es)?|pulpo|cangrejos?|almejas?|"
+                r"mariscos?|jaiba)\b",
+    "Ajonjolí": r"\b(ajonjoli|sesamo|tahini|tahin)\b",
+}
+
+
+def detectar_alergenos(r: Receta) -> list[str]:
+    texto = " ".join(_clave(i.nombre) for i in r.ingredientes)
+    encontrados = {a for a, patron in ALERGENOS.items() if re.search(patron, texto)}
+    por_clave = {_clave(a): a for a in ALERGENOS}
+    encontrados |= {por_clave[_clave(x)] for x in (r.alergenos or []) if _clave(x) in por_clave}
+    return [a for a in ALERGENOS if a in encontrados]
+
+
+NO_PERMITIDO = {"Vegana": {"Lácteos", "Huevo", "Pescado", "Mariscos"},
+                "Vegetariana": {"Huevo", "Pescado", "Mariscos"},
+                "Ovolactovegetariana": {"Pescado", "Mariscos"}}
+
+
+def cumple_dieta(r: Receta, dieta: str) -> bool:
+    """Segunda revisión: descarta recetas que la IA marcó de una dieta pero traen algo prohibido."""
+    return not (NO_PERMITIDO.get(dieta, set()) & set(r.alergenos or []))
+
+
 def limpiar_receta(r: Receta) -> Receta:
     """Corrige datos imposibles que a veces devuelve la IA."""
     r.porciones = max(1, int(r.porciones or 1))
@@ -149,6 +220,7 @@ def limpiar_receta(r: Receta) -> Receta:
         i.fraccion_usada = min(1.0, max(0.0, float(i.fraccion_usada or 0)))
         buenos.append(i)
     r.ingredientes = buenos
+    r.alergenos = detectar_alergenos(r)
     if r.icono not in ICONOS:
         r.icono = "otro"
     return r
@@ -252,12 +324,15 @@ def llamar_gemini(cliente, prompt: str, esquema, modelos=(MODELO_PRINCIPAL, MODE
 
 
 def buscar_recetas(cliente, cocinas, personas, max_porcion, tiempo, tipos=(), ciudad="Guayaquil",
-                   excluir=(), sobrantes=(), cantidad=RECETAS_POR_BUSQUEDA):
+                   excluir=(), sobrantes=(), cantidad=RECETAS_POR_BUSQUEDA, categoria="", dieta="Todas"):
     """Devuelve (recetas dentro del presupuesto ordenadas por precio, cuántas se descartaron)."""
     prompt = PROMPT_RECETAS.format(
-        n=cantidad, cocinas=", ".join(cocinas), personas=personas, max_porcion=max_porcion,
+        n=cantidad, economica=ECONOMICA, cocinas=", ".join(cocinas), personas=personas, max_porcion=max_porcion,
         tiempo=tiempo, tipos=", ".join(tipos) or "cualquiera", ciudad=ciudad or "Guayaquil",
         excluir=", ".join(excluir) or "ninguna",
+        categoria=(f"- Categoría: {categoria}. TODAS las recetas deben ser de esta categoría "
+                   f"({DESCRIPCION_CATEGORIA.get(categoria, categoria)}).\n") if categoria else "",
+        dieta=(f"- Dieta OBLIGATORIA, revisa cada ingrediente: {DIETAS[dieta]}.\n") if DIETAS.get(dieta) else "",
         extra=EXTRA_SOBRANTES.format(sobrantes=", ".join(sobrantes)) if sobrantes else "",
     )
     cat, _ = llamar_gemini(cliente, prompt, Catalogo, razonamiento="minimal")
@@ -265,6 +340,9 @@ def buscar_recetas(cliente, cocinas, personas, max_porcion, tiempo, tipos=(), ci
     for r in cat.recetas:
         r = ajustar_porciones(limpiar_receta(r), personas)
         if not r.ingredientes or not r.pasos:
+            descartadas += 1
+            continue
+        if not cumple_dieta(r, dieta):
             descartadas += 1
             continue
         if costo_porcion(r) > max_porcion * 1.1:  # 10 % de tolerancia por redondeo

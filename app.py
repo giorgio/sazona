@@ -1,4 +1,4 @@
-"""sazón.: recetas sanas y baratas de todo el mundo, con su precio por porción.
+"""sazona.: recetas sanas y baratas de todo el mundo, con su precio por porción.
 
 Hermana de canastas. Páginas:
   - Inicio: la receta sugerida del día (con foto) y un botón por país.
@@ -23,7 +23,7 @@ import fotos
 import nucleo as n
 
 ICONO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icono.png")
-st.set_page_config(page_title="sazón.", page_icon=ICONO if os.path.exists(ICONO) else "🍲", layout="wide")
+st.set_page_config(page_title="sazona.", page_icon=ICONO if os.path.exists(ICONO) else "🍲", layout="wide")
 
 ESPERA_ENTRE_CONSULTAS = 6
 TIENDAS_CERCANAS = "https://www.google.com/maps/search/?api=1&query=supermercados+y+mercados+cerca+de+m%C3%AD"
@@ -32,7 +32,7 @@ BASE_PERSONAS = 4         # la IA calcula para 4; la app escala a lo que elija l
 MAX_PORCION = 2.5
 TIEMPO_MAX = 60
 INICIALES = {"pagina": "inicio", "pais": None, "extra": {}, "visibles": {}, "menu": [], "ideas_sobra": [],
-             "personas": 2}
+             "personas": 2, "historial": [], "categoria": "Plato fuerte", "dieta": "Todas"}
 for _k, _v in INICIALES.items():
     st.session_state.setdefault(_k, _v)
 
@@ -42,9 +42,26 @@ for _k, _v in INICIALES.items():
 # ---------------------------------------------------------------------------
 
 def ir(pagina, pais=None):
-    st.session_state["pagina"] = pagina
+    s = st.session_state
+    actual = (s["pagina"], s["pais"])
+    if (pagina, pais or s["pais"]) != actual:
+        s["historial"] = (s["historial"] + [actual])[-20:]      # recuerda de dónde viene
+    s["pagina"] = pagina
     if pais:
-        st.session_state["pais"] = pais
+        s["pais"] = pais
+
+
+def atras():
+    s = st.session_state
+    if s["historial"]:
+        s["pagina"], s["pais"] = s["historial"][-1]
+        s["historial"] = s["historial"][:-1]
+    else:
+        s["pagina"] = "inicio"
+
+
+def boton_atras(clave="atras"):
+    st.button("Atrás", icon=":material/arrow_back:", on_click=atras, key=clave)
 
 
 def secreto(nombre):
@@ -75,10 +92,10 @@ def esperar_turno():
 
 
 @st.cache_data(ttl=86400, show_spinner=False, max_entries=60)
-def recetas_del_dia(cocina: str, dia: str):
-    """Recetas de una cocina. Se guardan un día y se comparten entre visitantes (ahorra cuota)."""
+def recetas_del_dia(cocina: str, dia: str, categoria: str = "Plato fuerte", dieta: str = "Todas"):
+    """Recetas de una cocina y categoría. Se guardan un día y se comparten entre visitantes (ahorra cuota)."""
     recetas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION, TIEMPO_MAX,
-                                  cantidad=POR_PAGINA)
+                                  cantidad=POR_PAGINA, categoria=categoria, dieta=dieta)
     return recetas
 
 
@@ -132,7 +149,7 @@ def ver_receta(r):
         st.session_state["personas"] = personas
         rp = n.ajustar_porciones(r, personas)
         compras = n.compras_receta(rp)
-        d.costo_compras(compras["total"], personas)
+        d.costos(n.costo_porcion(rp), compras["total"], personas)
         ya = en_menu(r)
         st.button("Quitar de mi semana" if ya else f"Agregar a mi semana (para {personas})",
                   icon=":material/remove:" if ya else ":material/add:", on_click=alternar_menu, args=(rp,),
@@ -149,12 +166,19 @@ def ver_receta(r):
         st.markdown(f"{i}. {p}")
     st.caption(f"Dificultad: {r.dificultad}")
     st.info("💚 " + r.por_que_es_saludable)
+    if r.alergenos:
+        st.warning("⚠️ **Alérgenos:** " + ", ".join(r.alergenos) + ". Es una estimación: si tienes alergias, "
+                   "revisa la etiqueta de cada producto.")
+    if st.button("Atrás", icon=":material/arrow_back:", key=f"cerrar_{r.nombre}", width="stretch"):
+        st.rerun()                                              # cierra la receta
 
 
 def tarjeta(r, clave: str):
     with st.container(border=True, key=f"rc_{clave}"):
         mostrar_foto(r)
-        d.info_receta(r, n.costo_porcion(r))
+        personas = st.session_state["personas"]
+        rp = n.ajustar_porciones(r, personas)
+        d.info_receta(r, n.costo_porcion(rp), n.compras_receta(rp)["total"], personas)
         if st.button("Ver receta", key=f"ver_{clave}", icon=":material/menu_book:", type="primary", width="stretch"):
             ver_receta(r)
         with st.container(key=f"en_menu_{clave}" if en_menu(r) else f"fuera_{clave}"):
@@ -195,7 +219,7 @@ def pagina_inicio():
         dia = hoy()
         try:
             with st.spinner("Preparando la receta del día…"):
-                r = recetas_del_dia(cocina_sugerida(dia), dia)[0]
+                r = recetas_del_dia(cocina_sugerida(dia), dia, "Plato fuerte", st.session_state["dieta"])[0]
         except n.ErrorIA as e:
             st.warning(f"No pudimos traer la receta del día. {e}")
             return
@@ -205,7 +229,9 @@ def pagina_inicio():
             with c1:
                 mostrar_foto(r)
             with c2:
-                d.info_receta(r, n.costo_porcion(r))
+                personas = st.session_state["personas"]
+                rp = n.ajustar_porciones(r, personas)
+                d.info_receta(r, n.costo_porcion(rp), n.compras_receta(rp)["total"], personas)
                 if st.button("Ver receta", key="ver_sugerida", icon=":material/menu_book:", type="primary",
                              width="stretch"):
                     ver_receta(r)
@@ -220,18 +246,25 @@ def pagina_pais():
     s = st.session_state
     pais = s["pais"] or "Ecuador"
     cocina = n.PAISES[pais]
-    st.button("Todos los países", icon=":material/arrow_back:", on_click=ir, args=("inicio",), key="volver")
+    boton_atras()
     d.titulo(f"Cocina de {pais}" if pais not in ("Mediterráneo", "Medio Oriente") else f"Cocina del {pais}",
-             f"{pais}.", "Ordenadas de la más barata a la más cara. Abre una para calcularla para tu familia.")
+             f"{pais}.", "Primero las más baratas: las marcadas 💰 Económica cuestan $1 o menos por porción.")
+    cat = st.segmented_control("Tipo de plato", n.CATEGORIAS, default=s["categoria"], key="cat_sel",
+                               label_visibility="collapsed", width="stretch")
+    if cat:
+        s["categoria"] = cat
+    cat = s["categoria"]
+    dieta = s["dieta"]
+    clave = f"{cocina}|{cat}|{dieta}"
     try:
-        with st.spinner(f"Buscando recetas de {pais}… unos segundos"):
-            recetas = recetas_del_dia(cocina, hoy()) + s["extra"].get(cocina, [])
+        with st.spinner(f"Buscando {cat.lower()} de {pais}… unos segundos"):
+            recetas = recetas_del_dia(cocina, hoy(), cat, dieta) + s["extra"].get(clave, [])
     except n.ErrorIA as e:
         st.error(str(e))
         return
 
-    visibles = s["visibles"].get(cocina, POR_PAGINA)
-    cuadricula(recetas[:visibles], f"p{cocina[:3]}")
+    visibles = s["visibles"].get(clave, POR_PAGINA)
+    cuadricula(recetas[:visibles], f"p{cocina[:3]}{n.CATEGORIAS.index(cat)}")
     st.write("")
     if st.button("Mostrar más", icon=":material/expand_more:", key="mas", width="stretch"):
         if visibles >= len(recetas):  # ya se vieron todas: pedir nuevas a la IA
@@ -240,12 +273,12 @@ def pagina_pais():
                 try:
                     nuevas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION,
                                                  TIEMPO_MAX, excluir=[r.nombre for r in recetas],
-                                                 cantidad=POR_PAGINA)
+                                                 cantidad=POR_PAGINA, categoria=cat, dieta=dieta)
                 except n.ErrorIA as e:
                     st.error(str(e))
                     return
-            s["extra"][cocina] = s["extra"].get(cocina, []) + nuevas
-        s["visibles"][cocina] = visibles + POR_PAGINA
+            s["extra"][clave] = s["extra"].get(clave, []) + nuevas
+        s["visibles"][clave] = visibles + POR_PAGINA
         st.rerun()
 
 
@@ -255,6 +288,7 @@ def pagina_pais():
 
 def pagina_semana():
     menu = st.session_state["menu"]
+    boton_atras()
     d.titulo("Tu plan de la semana", "Mi semana.",
              "Las recetas que elegiste, en una sola lista de compras.")
     if not menu:
@@ -293,7 +327,7 @@ def pagina_semana():
             st.caption("Revisa si ya tienes en casa: " + ", ".join(f["Ingrediente"] for f in lista["despensa"]))
         b1, b2, b3 = st.columns(3, gap="small")
         b3.link_button("Tiendas cercanas", TIENDAS_CERCANAS, icon=":material/location_on:", width="stretch")
-        b1.download_button("Descargar lista", n.texto_lista(menu, lista).encode("utf-8"), "lista_sazon.txt",
+        b1.download_button("Descargar lista", n.texto_lista(menu, lista).encode("utf-8"), "lista_sazona.txt",
                            "text/plain", icon=":material/download:", width="stretch")
         b2.link_button("Comparar precios en canastas.", n.enlace_canastas(lista),
                        icon=":material/shopping_basket:", width="stretch")
@@ -318,7 +352,8 @@ def seccion_sobrantes(lista):
                 try:
                     s_["ideas_sobra"], _ = n.buscar_recetas(
                         cliente_gemini(), cocinas, s_["personas"], MAX_PORCION, TIEMPO_MAX,
-                        excluir=[r.nombre for r in s_["menu"]], sobrantes=[x["nombre"] for x in lista["sobrantes"]])
+                        excluir=[r.nombre for r in s_["menu"]], sobrantes=[x["nombre"] for x in lista["sobrantes"]],
+                        dieta=s_["dieta"])
                 except n.ErrorIA as e:
                     st.error(str(e))
     if st.session_state["ideas_sobra"]:
@@ -332,14 +367,17 @@ def seccion_sobrantes(lista):
 # ---------------------------------------------------------------------------
 
 d.aplicar_estilos()
-d.cabecera()
+d.cabecera(ir)
 pagina = st.session_state["pagina"]
 col_menu, col_pagina = st.columns([1, 3], gap="large")
 with col_menu:
     d.menu("semana" if pagina == "semana" else "inicio", ir, len(st.session_state["menu"]))
+    st.selectbox("Tu alimentación", list(n.DIETAS), key="dieta",
+                 help="Vegetariana: con lácteos, sin huevo. Ovolactovegetariana: con huevo y lácteos. "
+                      "Pescetariana: con pescado y mariscos, sin carne ni pollo.")
 with col_pagina:
     {"inicio": pagina_inicio, "pais": pagina_pais, "semana": pagina_semana}.get(pagina, pagina_inicio)()
 
 st.divider()
-st.caption("sazón. · hermana de canastas. · IA: Google Gemini · Fotos: [Wikimedia Commons](https://commons.wikimedia.org) · "
+st.caption("sazona. · hermana de canastas. · IA: Google Gemini · Fotos: [Wikimedia Commons](https://commons.wikimedia.org) · "
            "Precios y valores nutricionales aproximados.")

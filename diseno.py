@@ -1,4 +1,4 @@
-"""Diseño visual de sazón.: misma familia que canastas., en terracota.
+"""Diseño visual de sazona.: misma familia que canastas., en terracota.
 
 Colores y fuente base están en .streamlit/config.toml; aquí van la cabecera,
 los títulos, las tarjetas de receta y el menú. Solo presentación.
@@ -24,7 +24,7 @@ TONOS = [("#5E6B3A", "#FFFFFF"),   # oliva
          ("#3E5A7A", "#FFFFFF"),   # azul tierra
          ("#D9956A", TEXTO)]       # arcilla
 
-# Isotipo de sazón.: la S baja y se convierte en un plato hondo servido.
+# Isotipo de sazona.: la S baja y se convierte en un plato hondo servido.
 ISOTIPO = ("M29.6 9.6 C29.6 6.1 26.8 3.6 23.3 3.6 C19.7 3.6 16.9 6.2 16.9 9.5 C16.9 13 19.6 16.6 23.4 16.6 "
            "L41.5 16.6 A17.5 15.5 0 0 1 6.5 16.6 L13.5 16.6 M18.5 37.2 H29.5")
 
@@ -48,6 +48,9 @@ header[data-testid="stHeader"] {{ background: transparent; }}
   background:#fff; border-bottom:1px solid {BORDE}; padding:1.3rem 0; margin-bottom:2.2rem;
   box-shadow:0 0 0 100vmax #fff; clip-path:inset(0 -100vmax); }}
 .sz-logo {{ display:flex; align-items:center; gap:.85rem; }}
+.st-key-logo_wrap {{ position:relative; gap:0 !important; }}
+.st-key-logo_btn {{ position:absolute !important; top:0; left:0; width:280px !important; height:100%; z-index:5; }}
+.st-key-logo_btn button {{ width:100%; height:100%; opacity:0; cursor:pointer; }}
 .sz-logo .icono {{ width:48px; height:48px; border-radius:13px; background:{TERRA}; display:grid; place-items:center; }}
 .sz-logo .nombre {{ font-size:1.95rem; font-weight:800; letter-spacing:-.035em; color:{TEXTO}; }}
 .sz-logo .punto {{ color:{TERRA}; }}
@@ -76,10 +79,23 @@ header[data-testid="stHeader"] {{ background: transparent; }}
 .sz-chips {{ display:flex; gap:.4rem; flex-wrap:wrap; margin:.3rem 0 .4rem; }}
 .sz-chip {{ font-size:.75rem; font-weight:700; color:{TERRA}; background:{TERRA_CLARO}; border-radius:999px;
   padding:.15rem .6rem; }}
+[data-testid="stDialog"] button[aria-label="Close"] {{ position:fixed; top:1.4rem; right:1.6rem; z-index:1000;
+  width:2.6rem; height:2.6rem; border-radius:999px; background:{BOTON}; color:#fff; opacity:1;
+  box-shadow:0 2px 8px rgba(0,0,0,.18); }}
+[data-testid="stDialog"] button[aria-label="Close"] svg {{ width:1.4rem; height:1.4rem; color:#fff; fill:#fff; }}
+[data-testid="stDialog"] button[aria-label="Close"]:hover {{ filter:brightness(1.1); }}
+.sz-alergia {{ display:inline-block; font-size:.78rem; font-weight:700; color:#7A4A00; background:#FCEBC4;
+  border:1px solid #E9C46A; border-radius:8px; padding:.15rem .55rem; margin:.1rem 0 .35rem; }}
+.sz-chip.barata {{ color:#fff; background:#5E6B3A; }}
 .sz-chip.gris {{ color:{GRIS}; background:#F1ECE8; font-weight:600; }}
 .sz-nombre {{ font-size:1.2rem; font-weight:800; letter-spacing:-.02em; color:{TEXTO}; line-height:1.2; margin:.1rem 0 .3rem; }}
 .sz-desc {{ font-size:.92rem; color:{GRIS}; line-height:1.45; margin:0 0 .7rem; min-height:2.7em; }}
 .sz-precio b {{ display:block; font-size:1.75rem; font-weight:800; color:{TERRA}; letter-spacing:-.03em; line-height:1.1; }}
+.sz-precios {{ display:flex; gap:.6rem; margin:.2rem 0 .3rem; }}
+.sz-precios .sz-precio {{ flex:1; background:{TERRA_CLARO}; border-radius:12px; padding:.5rem .7rem; }}
+.sz-precios .sz-precio.total {{ background:{BOTON}; }}
+.sz-precios .sz-precio.total b, .sz-precios .sz-precio.total span {{ color:#fff; }}
+.sz-precios .sz-precio b {{ font-size:1.45rem; }}
 .sz-precio span {{ display:block; font-size:.86rem; color:{GRIS}; margin-top:.1rem; }}
 [class*="st-key-rc_"] .stButton {{ margin-top:-.2rem; }}
 .sz-nutri {{ font-size:.82rem; color:{GRIS}; margin:.2rem 0 .7rem; }}
@@ -175,10 +191,18 @@ def aplicar_estilos():
     st.markdown(CSS, unsafe_allow_html=True)
 
 
-def cabecera():
+def cabecera(ir=None):
+    """Logo + lema. El logo es un botón invisible encima que lleva al inicio."""
+    with st.container(key="logo_wrap"):
+        _cabecera_html()
+        if ir:
+            st.button("Ir al inicio", key="logo_btn", on_click=ir, args=("inicio",), help="Ir al inicio")
+
+
+def _cabecera_html():
     st.markdown(
         f"""<div class="sz-cabecera"><div class="sz-logo"><span class="icono">{isotipo_svg('#fff', 30)}</span>
-        <span class="nombre">sazón<span class="punto"> .</span></span></div>
+        <span class="nombre">sazona<span class="punto"> .</span></span></div>
         <div class="sz-lema">Rico, sano y barato.</div></div>""",
         unsafe_allow_html=True,
     )
@@ -224,15 +248,28 @@ def credito_foto(foto: dict):
     )
 
 
-def info_receta(r, por_porcion: float | None = None):
+def precios_tarjeta(por_porcion, total, personas) -> str:
+    """Precio por porción y de toda la comida, uno al lado del otro."""
+    html_p = f'<div class="sz-precio"><b>${por_porcion:.2f}</b><span>por porción</span></div>'
+    if total is None:
+        return html_p
+    return (f'<div class="sz-precios">{html_p}'
+            f'<div class="sz-precio total"><b>${total:.2f}</b><span>todos los ingredientes</span></div></div>')
+
+
+def info_receta(r, por_porcion: float | None = None, total: float | None = None, personas: int | None = None):
     chips = [f'<span class="sz-chip">{html.escape(r.cocina)}</span>',
              f'<span class="sz-chip gris">{r.tiempo_minutos} min</span>']
+    if por_porcion is not None and por_porcion <= 1.00:
+        chips.insert(0, '<span class="sz-chip barata">💰 Económica</span>')
     chips += [f'<span class="sz-chip gris">{html.escape(e)}</span>' for e in r.etiquetas[:2]]
     st.markdown(
         f'<div class="sz-chips">{"".join(chips)}</div>'
-        f'<div class="sz-nombre">{html.escape(r.nombre)}</div>'
+        + (f'<div class="sz-alergia">⚠️ Contiene alérgenos: {html.escape(", ".join(r.alergenos))}</div>'
+           if getattr(r, "alergenos", None) else "")
+        + f'<div class="sz-nombre">{html.escape(r.nombre)}</div>'
         f'<p class="sz-desc">{html.escape(r.descripcion)}</p>'
-        + (f'<div class="sz-precio"><b>${por_porcion:.2f}</b><span>por porción</span></div>' if por_porcion is not None else "")
+        + (precios_tarjeta(por_porcion, total, personas) if por_porcion is not None else "")
         +         f'<div class="sz-nutri">~{r.calorias_por_porcion} kcal · {r.proteina_g_por_porcion} g de proteína por porción</div>',
         unsafe_allow_html=True,
     )
@@ -248,7 +285,7 @@ def costos(por_porcion: float, total: float, personas: int):
     gente = "1 persona" if personas == 1 else f"{personas} personas"
     st.markdown(
         f'<div class="sz-costos"><div class="sz-costo"><small>Por porción</small><b>${por_porcion:.2f}</b></div>'
-        f'<div class="sz-costo total"><small>Toda la receta ({gente})</small><b>${total:.2f}</b></div></div>',
+        f'<div class="sz-costo total"><small>Todos los ingredientes ({gente})</small><b>${total:.2f}</b></div></div>',
         unsafe_allow_html=True,
     )
 
