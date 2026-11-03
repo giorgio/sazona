@@ -165,7 +165,10 @@ def _unsplash(query: str, clave: str) -> list[dict]:
         r = requests.get(UNSPLASH_BUSQUEDA, params={"query": query, "per_page": 10, "orientation": "landscape",
                                                      "content_filter": "high", "order_by": "relevant"},
                          headers={"Authorization": f"Client-ID {clave}", "Accept-Version": "v1"}, timeout=4)
-        return r.json().get("results") or [] if r.status_code == 200 else []
+        if r.status_code != 200:
+            print(f"[foto] Unsplash respondió {r.status_code} (quedan {r.headers.get('X-Ratelimit-Remaining', '?')})", flush=True)
+            return []
+        return r.json().get("results") or []
     except (requests.RequestException, ValueError):
         return []
 
@@ -190,7 +193,7 @@ def candidatos_unsplash(consulta: str, clave: str, maximo: int = 3) -> list[dict
         if q in vistos or len(salida) >= maximo:
             continue
         vistos.add(q)
-        fotos = _unsplash(q + " food photography plated", clave) or _unsplash(q + " food", clave)
+        fotos = _unsplash(q + " food", clave)            # 1 sola búsqueda por intento: la cuota es de 50 por hora
         fotos = [f for f in fotos if f.get("id") not in ids and not any(x in _texto_unsplash(f) for x in NO_ES_PLATO)]
         # primero las que nombran el plato y se ven servidas
         fotos.sort(key=lambda f: (-es_del_plato(_texto_unsplash(f), palabras, minimo=1),
@@ -221,17 +224,25 @@ def buscar_foto(consulta: str, clave_pexels: str | None = None, clave_unsplash: 
         f = foto_pexels(consulta, clave_pexels)
         if f and f.get("url"):
             candidatas.append(f)
-    if not candidatas or verificar is None:
+    def commons():
         f = foto_commons(consulta)
         corta = " ".join(palabras_plato(consulta)[-2:])
         if f is None and corta and corta != consulta.lower():
             f = foto_commons(corta)
-        if f:
-            candidatas.append(f)
+        return [f] if f else []
+
+    if not candidatas or verificar is None:
+        candidatas += commons()
+        probado_commons = True
+    else:
+        probado_commons = False
     print(f"[foto] {consulta!r}: {len(candidatas)} candidatas "
           f"({', '.join(sorted({c.get('fuente', '?') for c in candidatas})) or 'ninguna'})", flush=True)
-    for c in candidatas:
+    while candidatas:
+        c = candidatas.pop(0)
         if verificar is not None and not verificar(c.get("url_chica") or c["url"]):
+            if not candidatas and not probado_commons:   # ninguna de Unsplash sirvió: probar Wikimedia
+                candidatas, probado_commons = commons(), True
             continue
         if c.get("fuente") == "Unsplash" and clave_unsplash:
             avisar_descarga(c.get("_crudo") or {}, clave_unsplash)

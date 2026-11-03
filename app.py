@@ -128,10 +128,18 @@ def cocina_sugerida(dia: str) -> str:
     return cocinas[datetime.fromisoformat(dia).toordinal() % len(cocinas)]
 
 
-@st.cache_data(ttl=7 * 86400, show_spinner=False)
-def foto(consulta: str, plato: str = "", version: int = 6):
-    """Busca la foto y, si hay clave de IA, la IA mira cada candidata y solo acepta la que es ese plato.
-    Si la revisión falla (cuota de la IA), se lanza error para NO guardar 'sin foto' y reintentar luego."""
+class SinFoto(Exception):
+    """No se guarda en caché: así se vuelve a intentar más tarde (cuota de Unsplash o de la IA)."""
+
+
+@st.cache_resource
+def _sin_foto_reciente() -> dict:
+    return {}
+
+
+@st.cache_data(ttl=7 * 86400, show_spinner=False, max_entries=500)
+def foto(consulta: str, plato: str = "", version: int = 7):
+    """Solo se guarda cuando SÍ hay foto; si no, se reintenta en una hora."""
     verificar = None
     if secreto("GEMINI_API_KEY"):
         cliente = cliente_gemini()
@@ -141,8 +149,14 @@ def foto(consulta: str, plato: str = "", version: int = 6):
                 img = requests.get(url, timeout=5).content
             except requests.RequestException:
                 return False
-            return n.foto_coincide(cliente, img, plato or consulta, consulta)
-    return fotos.buscar_foto(consulta, secreto("PEXELS_API_KEY"), secreto("UNSPLASH_ACCESS_KEY"), verificar)
+            try:
+                return n.foto_coincide(cliente, img, plato or consulta, consulta)
+            except n.ErrorIA:
+                return False
+    f = fotos.buscar_foto(consulta, secreto("PEXELS_API_KEY"), secreto("UNSPLASH_ACCESS_KEY"), verificar)
+    if not f:
+        raise SinFoto(consulta)
+    return f
 
 
 def en_menu(r) -> bool:
@@ -161,10 +175,14 @@ def alto(filas):
 
 
 def mostrar_foto(r):
-    try:
-        f = foto(r.busqueda_foto, r.nombre)
-    except Exception:  # noqa: BLE001  (la IA no pudo revisar la foto ahora: sin foto por esta vez)
-        f = None
+    malas = _sin_foto_reciente()
+    f = None
+    if time.time() - malas.get(r.busqueda_foto, 0) > 3600:
+        try:
+            f = foto(r.busqueda_foto, r.nombre)
+        except Exception as e:  # noqa: BLE001
+            print(f"[foto] sin foto para {r.nombre!r}: {type(e).__name__} {e}", flush=True)
+            malas[r.busqueda_foto] = time.time()
     if f:
         st.image(f["url"], width="stretch")
         d.credito_foto(f)
