@@ -17,6 +17,27 @@ USER_AGENT = "sazon-app/1.0 (proyecto personal de recetas; https://github.com/gi
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
 PEXELS_BUSQUEDA = "https://api.pexels.com/v1/search"
 LICENCIAS_OK = ("cc0", "public domain", "cc by", "cc-by", "dominio público")
+# Palabras que no dicen QUÉ plato es (sin ellas, "Mexican salad" trae fotos de carreteras de México)
+NO_PLATO = {"mexican", "ecuadorian", "ecuador", "italian", "italy", "chinese", "china", "peruvian", "peru",
+            "indian", "india", "japanese", "japan", "thai", "mediterranean", "middle", "eastern", "east",
+            "spanish", "french", "greek", "korean", "colombian", "argentinian", "style", "homemade", "healthy",
+            "with", "and", "the", "dish", "food", "plate", "bowl", "recipe", "traditional", "fresh", "easy",
+            "simple", "light", "vegan", "vegetarian", "served", "cooked"}
+
+
+def palabras_plato(consulta: str) -> list[str]:
+    ws = re.findall(r"[a-záéíóúñ]+", (consulta or "").lower())
+    return [w for w in ws if len(w) > 3 and w not in NO_PLATO]
+
+
+def _raiz(w: str) -> str:
+    return w[:-3] if w.endswith("ies") else w[:-2] if w.endswith("es") and len(w) > 5 else w.rstrip("s")
+
+
+def es_del_plato(titulo: str, palabras: list[str]) -> bool:
+    """La foto sirve solo si su nombre menciona el plato o un ingrediente buscado."""
+    t = (titulo or "").lower()
+    return any(_raiz(w) in t for w in palabras)
 
 
 def _texto_plano(valor: str) -> str:
@@ -29,7 +50,7 @@ def foto_commons(consulta: str) -> dict | None:
         r = requests.get(
             COMMONS_API,
             params={"action": "query", "format": "json", "generator": "search", "gsrnamespace": 6,
-                    "gsrlimit": 6, "gsrsearch": f"{consulta} filetype:bitmap", "prop": "imageinfo",
+                    "gsrlimit": 15, "gsrsearch": f"{consulta} food filetype:bitmap", "prop": "imageinfo",
                     "iiprop": "url|extmetadata", "iiurlwidth": 900,
                     "iiextmetadatafilter": "Artist|LicenseShortName|LicenseUrl"},
             headers={"User-Agent": USER_AGENT},
@@ -39,7 +60,10 @@ def foto_commons(consulta: str) -> dict | None:
         paginas = (r.json().get("query") or {}).get("pages") or {}
     except (requests.RequestException, ValueError):
         return None
+    palabras = palabras_plato(consulta)
     for p in sorted(paginas.values(), key=lambda x: x.get("index", 99)):
+        if not es_del_plato(p.get("title", ""), palabras):
+            continue
         info = (p.get("imageinfo") or [{}])[0]
         meta = info.get("extmetadata") or {}
         licencia = (meta.get("LicenseShortName") or {}).get("value", "")
@@ -78,6 +102,7 @@ def buscar_foto(consulta: str, clave_pexels: str | None = None) -> dict | None:
         if f and f.get("url"):
             return f
     f = foto_commons(consulta)
-    if f is None and len(consulta.split()) > 2:  # segunda oportunidad con una búsqueda más corta
-        f = foto_commons(" ".join(consulta.split()[:2]))
-    return f
+    corta = " ".join(palabras_plato(consulta)[-2:])     # p. ej. "Mexican lentil salad" -> "lentil salad"
+    if f is None and corta and corta != consulta.lower():
+        f = foto_commons(corta)
+    return f                                            # None: la app muestra el dibujo de la marca
