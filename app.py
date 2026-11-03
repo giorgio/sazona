@@ -12,12 +12,16 @@ Claves en .streamlit/secrets.toml o en los Secrets de Streamlit Cloud: GEMINI_AP
 """
 
 import os
-import streamlit.components.v1 as componentes
 import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import streamlit as st
+
+try:
+    import streamlit.components.v1 as componentes
+except Exception:  # noqa: BLE001
+    componentes = None
 
 import diseno as d
 import fotos
@@ -416,11 +420,14 @@ vista = (pagina, st.session_state["pais"])
 if st.session_state.get("vista_anterior") != vista:
     st.session_state["vista_anterior"] = vista
     st.session_state["subidas"] = st.session_state.get("subidas", 0) + 1
-    componentes.html(
-        "<script>/* %d */const d = window.parent.document;"
-        "d.querySelectorAll('[data-testid=\"stMain\"], [data-testid=\"stAppViewContainer\"], section.main')"
-        ".forEach(e => e.scrollTo({top: 0}));window.parent.scrollTo({top: 0});</script>"
-        % st.session_state["subidas"], height=0)
+    try:  # si Streamlit retira esta función, la app sigue funcionando (solo no sube sola)
+        componentes.html(
+            "<script>/* %d */const d = window.parent.document;"
+            "d.querySelectorAll('[data-testid=\"stMain\"], [data-testid=\"stAppViewContainer\"], section.main')"
+            ".forEach(e => e.scrollTo({top: 0}));window.parent.scrollTo({top: 0});</script>"
+            % st.session_state["subidas"], height=0)
+    except Exception:  # noqa: BLE001
+        pass
 
 st.divider()
 st.caption("sazona. · hermana de canastas. · IA: Google Gemini · Fotos: [Wikimedia Commons](https://commons.wikimedia.org) · "
