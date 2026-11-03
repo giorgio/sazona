@@ -250,7 +250,9 @@ def credito_foto(foto: dict):
         lic = f" · {html.escape(lic)}"
     st.markdown(
         f'<div class="sz-credito">Foto: <a href="{html.escape(foto["pagina"])}" target="_blank">'
-        f'{html.escape(foto["autor"])}</a>{lic} · {html.escape(foto.get("fuente", ""))}</div>',
+        f'{html.escape(foto["autor"])}</a>{lic} · '
+        + (f'<a href="{html.escape(foto["fuente_url"])}" target="_blank">{html.escape(foto.get("fuente", ""))}</a>'
+           if foto.get("fuente_url") else html.escape(foto.get("fuente", ""))) + '</div>',
         unsafe_allow_html=True,
     )
 

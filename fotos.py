@@ -16,6 +16,8 @@ import requests
 USER_AGENT = "sazon-app/1.0 (proyecto personal de recetas; https://github.com/giorgio)"
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
 PEXELS_BUSQUEDA = "https://api.pexels.com/v1/search"
+UNSPLASH_BUSQUEDA = "https://api.unsplash.com/search/photos"
+APP = "sazona"
 LICENCIAS_OK = ("cc0", "public domain", "cc by", "cc-by", "dominio público")
 # Palabras que no dicen QUÉ plato es (sin ellas, "Mexican salad" trae fotos de carreteras de México)
 NO_PLATO = {"mexican", "ecuadorian", "ecuador", "italian", "italy", "chinese", "china", "peruvian", "peru",
@@ -106,10 +108,41 @@ def foto_pexels(consulta: str, clave: str) -> dict | None:
             "fuente": "Pexels"}
 
 
-def buscar_foto(consulta: str, clave_pexels: str | None = None) -> dict | None:
+def foto_unsplash(consulta: str, clave: str) -> dict | None:
+    """Fotos de comida de Unsplash. Se enlazan directo (lo pide Unsplash) y se acredita al fotógrafo."""
+    try:
+        r = requests.get(UNSPLASH_BUSQUEDA, params={"query": consulta + " food", "per_page": 8,
+                                                     "orientation": "landscape", "content_filter": "high"},
+                         headers={"Authorization": f"Client-ID {clave}", "Accept-Version": "v1"}, timeout=4)
+        if r.status_code != 200:
+            return None
+        fotos = r.json().get("results") or []
+    except (requests.RequestException, ValueError):
+        return None
+    palabras = palabras_plato(consulta)
+    def texto(f):
+        tags = " ".join(t.get("title", "") for t in (f.get("tags") or []))
+        return " ".join([f.get("alt_description") or "", f.get("description") or "", tags])
+    buenas = [f for f in fotos if es_del_plato(texto(f), palabras)]
+    f = (buenas or [None])[0]
+    if not f:                                   # ninguna nombra el plato: mejor sin foto que una equivocada
+        return None
+    u = f.get("user") or {}
+    utm = f"?utm_source={APP}&utm_medium=referral"
+    return {"url": (f.get("urls") or {}).get("regular"), "autor": u.get("name") or "Unsplash",
+            "pagina": ((u.get("links") or {}).get("html") or "https://unsplash.com") + utm,
+            "licencia": "", "licencia_url": "", "fuente": "Unsplash",
+            "fuente_url": "https://unsplash.com/" + utm}
+
+
+def buscar_foto(consulta: str, clave_pexels: str | None = None, clave_unsplash: str | None = None) -> dict | None:
     """Devuelve {'url','autor','pagina','licencia','licencia_url','fuente'} o None."""
     if not consulta:
         return None
+    if clave_unsplash:
+        f = foto_unsplash(consulta, clave_unsplash)
+        if f and f.get("url"):
+            return f
     if clave_pexels:
         f = foto_pexels(consulta, clave_pexels)
         if f and f.get("url"):

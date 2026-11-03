@@ -128,7 +128,7 @@ def cocina_sugerida(dia: str) -> str:
 
 @st.cache_data(ttl=7 * 86400, show_spinner=False)
 def foto(consulta: str):
-    return fotos.buscar_foto(consulta, secreto("PEXELS_API_KEY"))
+    return fotos.buscar_foto(consulta, secreto("PEXELS_API_KEY"), secreto("UNSPLASH_ACCESS_KEY"))
 
 
 def en_menu(r) -> bool:
@@ -433,5 +433,5 @@ if st.session_state.get("vista_anterior") != vista:
         pass
 
 st.divider()
-st.caption("sazona. · hermana de canastas. · IA: Google Gemini · Fotos: [Wikimedia Commons](https://commons.wikimedia.org) · "
+st.caption("sazona. · hermana de canastas. · IA: Google Gemini · Fotos: [Unsplash](https://unsplash.com/?utm_source=sazona&utm_medium=referral) / [Wikimedia Commons](https://commons.wikimedia.org) · "
            "Precios y valores nutricionales aproximados.")
