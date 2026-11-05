@@ -1,0 +1,783 @@
+{
+ "version": 1,
+ "recetas": [
+  {
+   "categoria": "Plato fuerte",
+   "receta": {
+    "nombre": "Arroz con huevo",
+    "cocina": "Ecuatoriana",
+    "descripcion": "El clásico de la casa: arroz blanco con huevo frito encima.",
+    "porciones": 4,
+    "tiempo_minutos": 25,
+    "dificultad": "Fácil",
+    "etiquetas": [
+     "Rápida",
+     "Para niños"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Arroz blanco",
+      "cantidad": "2 tazas",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 1.6,
+      "fraccion_usada": 0.37,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Huevos",
+      "cantidad": "4 unidades",
+      "presentacion": "cubeta de 30",
+      "precio_presentacion_usd": 4.1,
+      "fraccion_usada": 0.1333,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Aceite",
+      "cantidad": "2 cucharadas",
+      "presentacion": "botella de 1 litro",
+      "precio_presentacion_usd": 3.2,
+      "fraccion_usada": 0.03,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Sal",
+      "cantidad": "1 pizca",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.01,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Cocina el arroz con 4 tazas de agua y una pizca de sal, 20 minutos a fuego medio.",
+     "Calienta el aceite en una sartén grande.",
+     "Fríe los huevos uno por uno, con la yema entera.",
+     "Sirve el arroz con un huevo encima de cada plato."
+    ],
+    "calorias_por_porcion": 420,
+    "proteina_g_por_porcion": 12,
+    "por_que_es_saludable": "El huevo da proteína completa y el plato no lleva frituras profundas.",
+    "busqueda_foto": "fried rice egg",
+    "icono": "arroz",
+    "plato_conocido": true,
+    "alergenos": [
+     "Huevo"
+    ]
+   }
+  },
+  {
+   "categoria": "Desayunos",
+   "receta": {
+    "nombre": "Huevos pericos",
+    "cocina": "Colombiana",
+    "descripcion": "Huevos revueltos con tomate y cebolla larga, suaves y rápidos.",
+    "porciones": 4,
+    "tiempo_minutos": 15,
+    "dificultad": "Fácil",
+    "etiquetas": [
+     "Rápida",
+     "Alta en proteína"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Huevos",
+      "cantidad": "6 unidades",
+      "presentacion": "cubeta de 30",
+      "precio_presentacion_usd": 4.1,
+      "fraccion_usada": 0.2,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Tomate riñón",
+      "cantidad": "1 unidad",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.9,
+      "fraccion_usada": 0.3,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Cebolla larga",
+      "cantidad": "2 tallos",
+      "presentacion": "atado",
+      "precio_presentacion_usd": 0.6,
+      "fraccion_usada": 0.3,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Aceite",
+      "cantidad": "1 cucharada",
+      "presentacion": "botella de 1 litro",
+      "precio_presentacion_usd": 3.2,
+      "fraccion_usada": 0.015,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Sal",
+      "cantidad": "1 pizca",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.01,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Pica el tomate y la cebolla larga en cuadritos.",
+     "Sofríelos en el aceite 3 minutos.",
+     "Bate los huevos con sal y agrégalos.",
+     "Revuelve a fuego medio hasta que cuajen, sin secarlos."
+    ],
+    "calorias_por_porcion": 210,
+    "proteina_g_por_porcion": 13,
+    "por_que_es_saludable": "Huevo con verdura: proteína y vitaminas en un desayuno de 15 minutos.",
+    "busqueda_foto": "scrambled eggs tomato",
+    "icono": "huevo",
+    "plato_conocido": true,
+    "alergenos": [
+     "Huevo"
+    ]
+   }
+  },
+  {
+   "categoria": "Plato fuerte",
+   "receta": {
+    "nombre": "Tortilla española",
+    "cocina": "Española",
+    "descripcion": "Tortilla de papa dorada por fuera y jugosa por dentro.",
+    "porciones": 4,
+    "tiempo_minutos": 40,
+    "dificultad": "Media",
+    "etiquetas": [
+     "Alta en proteína"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Papa",
+      "cantidad": "4 unidades",
+      "presentacion": "malla de 2 kg",
+      "precio_presentacion_usd": 2.8,
+      "fraccion_usada": 0.35,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Huevos",
+      "cantidad": "6 unidades",
+      "presentacion": "cubeta de 30",
+      "precio_presentacion_usd": 4.1,
+      "fraccion_usada": 0.2,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Cebolla paiteña",
+      "cantidad": "1 unidad",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.3,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Aceite",
+      "cantidad": "6 cucharadas",
+      "presentacion": "botella de 1 litro",
+      "precio_presentacion_usd": 3.2,
+      "fraccion_usada": 0.09,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Sal",
+      "cantidad": "1 cucharadita",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.01,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Pela y corta las papas en láminas finas; pica la cebolla.",
+     "Cocina papa y cebolla en el aceite a fuego medio hasta que estén blandas.",
+     "Bate los huevos con sal y mezcla con la papa escurrida.",
+     "Cuaja en la sartén 4 minutos por lado."
+    ],
+    "calorias_por_porcion": 380,
+    "proteina_g_por_porcion": 14,
+    "por_que_es_saludable": "La papa cocida en vez de frita baja la grasa y llena más.",
+    "busqueda_foto": "spanish omelette",
+    "icono": "huevo",
+    "plato_conocido": true,
+    "alergenos": [
+     "Huevo"
+    ]
+   }
+  },
+  {
+   "categoria": "Sopas",
+   "receta": {
+    "nombre": "Sopa de lentejas",
+    "cocina": "Ecuatoriana",
+    "descripcion": "Lentejas suaves con papa y zanahoria, de olla de una vez.",
+    "porciones": 4,
+    "tiempo_minutos": 45,
+    "dificultad": "Fácil",
+    "etiquetas": [
+     "Vegana",
+     "Alta en proteína"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Lenteja",
+      "cantidad": "1 taza",
+      "presentacion": "funda de 500 g",
+      "precio_presentacion_usd": 1.75,
+      "fraccion_usada": 0.5,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Zanahoria",
+      "cantidad": "2 unidades",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.9,
+      "fraccion_usada": 0.4,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Papa",
+      "cantidad": "2 unidades",
+      "presentacion": "malla de 2 kg",
+      "precio_presentacion_usd": 2.8,
+      "fraccion_usada": 0.18,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Cebolla paiteña",
+      "cantidad": "1 unidad",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.3,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Ajo",
+      "cantidad": "2 dientes",
+      "presentacion": "cabeza",
+      "precio_presentacion_usd": 0.5,
+      "fraccion_usada": 0.2,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Comino",
+      "cantidad": "1 pizca",
+      "presentacion": "fundita de 100 g",
+      "precio_presentacion_usd": 1.2,
+      "fraccion_usada": 0.02,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Sal",
+      "cantidad": "1 cucharadita",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.01,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Haz un refrito con la cebolla, el ajo y el comino.",
+     "Agrega las lentejas lavadas y 6 tazas de agua.",
+     "Suma la papa y la zanahoria en cuadros.",
+     "Cocina 35 minutos hasta que la lenteja esté suave; salpimienta."
+    ],
+    "calorias_por_porcion": 320,
+    "proteina_g_por_porcion": 16,
+    "por_que_es_saludable": "La lenteja es la proteína barata por excelencia y llena sin grasa.",
+    "busqueda_foto": "lentil soup",
+    "icono": "sopa",
+    "plato_conocido": true,
+    "alergenos": []
+   }
+  },
+  {
+   "categoria": "Sopas",
+   "receta": {
+    "nombre": "Locro de papa",
+    "cocina": "Ecuatoriana",
+    "descripcion": "Crema de papa con queso fresco, la sopa de la sierra.",
+    "porciones": 4,
+    "tiempo_minutos": 40,
+    "dificultad": "Fácil",
+    "etiquetas": [
+     "Vegetariana"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Papa",
+      "cantidad": "8 unidades",
+      "presentacion": "malla de 2 kg",
+      "precio_presentacion_usd": 2.8,
+      "fraccion_usada": 0.55,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Queso fresco",
+      "cantidad": "200 g",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 3.5,
+      "fraccion_usada": 0.45,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Leche",
+      "cantidad": "2 tazas",
+      "presentacion": "cartón de 1 litro",
+      "precio_presentacion_usd": 1.2,
+      "fraccion_usada": 0.5,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Cebolla paiteña",
+      "cantidad": "1 unidad",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.25,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Achiote",
+      "cantidad": "1 cucharadita",
+      "presentacion": "fundita de 100 g",
+      "precio_presentacion_usd": 1.0,
+      "fraccion_usada": 0.02,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Sal",
+      "cantidad": "1 cucharadita",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.01,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Haz un refrito con la cebolla y el achiote.",
+     "Agrega las papas peladas en cuadros y agua que las cubra.",
+     "Cocina 25 minutos y aplasta la mitad de las papas para que espese.",
+     "Suma la leche y el queso en cuadros; sirve con aguacate si tienes."
+    ],
+    "calorias_por_porcion": 390,
+    "proteina_g_por_porcion": 13,
+    "por_que_es_saludable": "Sopa completa con proteína del queso y energía de la papa.",
+    "busqueda_foto": "potato cheese soup",
+    "icono": "sopa",
+    "plato_conocido": true,
+    "alergenos": [
+     "Lácteos"
+    ]
+   }
+  },
+  {
+   "categoria": "Plato fuerte",
+   "receta": {
+    "nombre": "Spaghetti al pomodoro",
+    "cocina": "Italiana",
+    "descripcion": "Fideos con salsa de tomate fresco y ajo, el clásico italiano.",
+    "porciones": 4,
+    "tiempo_minutos": 25,
+    "dificultad": "Fácil",
+    "etiquetas": [
+     "Vegana",
+     "Rápida"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Fideo spaghetti",
+      "cantidad": "400 g",
+      "presentacion": "funda de 500 g",
+      "precio_presentacion_usd": 1.3,
+      "fraccion_usada": 0.8,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Tomate riñón",
+      "cantidad": "4 unidades",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.9,
+      "fraccion_usada": 1.0,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Ajo",
+      "cantidad": "3 dientes",
+      "presentacion": "cabeza",
+      "precio_presentacion_usd": 0.5,
+      "fraccion_usada": 0.3,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Aceite",
+      "cantidad": "3 cucharadas",
+      "presentacion": "botella de 1 litro",
+      "precio_presentacion_usd": 3.2,
+      "fraccion_usada": 0.05,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Sal",
+      "cantidad": "1 cucharadita",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.01,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Hierve los fideos en agua con sal según la funda.",
+     "Sofríe el ajo laminado en el aceite sin quemarlo.",
+     "Agrega los tomates pelados y picados; cocina 10 minutos.",
+     "Mezcla los fideos con la salsa y sirve."
+    ],
+    "calorias_por_porcion": 410,
+    "proteina_g_por_porcion": 11,
+    "por_que_es_saludable": "Salsa de tomate fresco sin crema ni mantequilla: ligera y con sabor.",
+    "busqueda_foto": "spaghetti tomato sauce",
+    "icono": "pasta",
+    "plato_conocido": true,
+    "alergenos": [
+     "Gluten"
+    ]
+   }
+  },
+  {
+   "categoria": "Plato fuerte",
+   "receta": {
+    "nombre": "Arroz frito con huevo",
+    "cocina": "China",
+    "descripcion": "Arroz salteado con huevo y zanahoria, estilo chifa casero.",
+    "porciones": 4,
+    "tiempo_minutos": 20,
+    "dificultad": "Fácil",
+    "etiquetas": [
+     "Rápida"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Arroz blanco",
+      "cantidad": "2 tazas",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 1.6,
+      "fraccion_usada": 0.37,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Huevos",
+      "cantidad": "4 unidades",
+      "presentacion": "cubeta de 30",
+      "precio_presentacion_usd": 4.1,
+      "fraccion_usada": 0.1333,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Zanahoria",
+      "cantidad": "1 unidad",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.9,
+      "fraccion_usada": 0.2,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Cebolla larga",
+      "cantidad": "2 tallos",
+      "presentacion": "atado",
+      "precio_presentacion_usd": 0.6,
+      "fraccion_usada": 0.3,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Salsa china",
+      "cantidad": "2 cucharadas",
+      "presentacion": "botella de 290 ml",
+      "precio_presentacion_usd": 2.5,
+      "fraccion_usada": 0.1,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Aceite",
+      "cantidad": "2 cucharadas",
+      "presentacion": "botella de 1 litro",
+      "precio_presentacion_usd": 3.2,
+      "fraccion_usada": 0.03,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Sal",
+      "cantidad": "1 pizca",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.01,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Cocina el arroz y déjalo enfriar (queda mejor del día anterior).",
+     "Revuelve los huevos en el aceite y retíralos.",
+     "Saltea la zanahoria rallada y la cebolla larga.",
+     "Vuelve todo a la sartén con el arroz y la salsa china; mezcla 3 minutos."
+    ],
+    "calorias_por_porcion": 430,
+    "proteina_g_por_porcion": 12,
+    "por_que_es_saludable": "Salteado rápido con poca grasa y verdura incluida.",
+    "busqueda_foto": "egg fried rice",
+    "icono": "arroz",
+    "plato_conocido": true,
+    "alergenos": [
+     "Huevo",
+     "Soya"
+    ]
+   }
+  },
+  {
+   "categoria": "Desayunos",
+   "receta": {
+    "nombre": "Avena con guineo",
+    "cocina": "Ecuatoriana",
+    "descripcion": "Avena cremosa con guineo maduro, dulce natural.",
+    "porciones": 4,
+    "tiempo_minutos": 15,
+    "dificultad": "Fácil",
+    "etiquetas": [
+     "Para niños",
+     "Rápida"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Avena",
+      "cantidad": "2 tazas",
+      "presentacion": "funda de 500 g",
+      "precio_presentacion_usd": 1.5,
+      "fraccion_usada": 0.5,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Leche",
+      "cantidad": "1 litro",
+      "presentacion": "cartón de 1 litro",
+      "precio_presentacion_usd": 1.2,
+      "fraccion_usada": 1.0,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Guineo",
+      "cantidad": "3 unidades",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.5,
+      "fraccion_usada": 1.0,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Canela",
+      "cantidad": "1 pizca",
+      "presentacion": "fundita de 50 g",
+      "precio_presentacion_usd": 0.9,
+      "fraccion_usada": 0.02,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Azúcar",
+      "cantidad": "2 cucharadas",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 1.1,
+      "fraccion_usada": 0.03,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Hierve la leche con la canela.",
+     "Agrega la avena y revuelve 8 minutos a fuego medio.",
+     "Suma el guineo en rodajas y el azúcar.",
+     "Sirve caliente con más guineo encima."
+    ],
+    "calorias_por_porcion": 310,
+    "proteina_g_por_porcion": 9,
+    "por_que_es_saludable": "La fibra de la avena y el dulce del guineo evitan azúcar de más.",
+    "busqueda_foto": "oatmeal banana",
+    "icono": "otro",
+    "plato_conocido": true,
+    "alergenos": [
+     "Lácteos"
+    ]
+   }
+  },
+  {
+   "categoria": "Ensaladas",
+   "receta": {
+    "nombre": "Ensalada fresca de aguacate",
+    "cocina": "Mediterránea",
+    "descripcion": "Aguacate, tomate y lechuga con limón: fresca y completa.",
+    "porciones": 4,
+    "tiempo_minutos": 15,
+    "dificultad": "Fácil",
+    "etiquetas": [
+     "Vegana",
+     "Baja en grasa"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Aguacate",
+      "cantidad": "2 unidades",
+      "presentacion": "malla de 4 unidades",
+      "precio_presentacion_usd": 2.0,
+      "fraccion_usada": 0.5,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Tomate riñón",
+      "cantidad": "2 unidades",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.9,
+      "fraccion_usada": 0.5,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Lechuga",
+      "cantidad": "media unidad",
+      "presentacion": "unidad",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 1.0,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Limón",
+      "cantidad": "2 unidades",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 1.0,
+      "fraccion_usada": 0.3,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Cebolla paiteña",
+      "cantidad": "media unidad",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.15,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Aceite",
+      "cantidad": "1 cucharada",
+      "presentacion": "botella de 1 litro",
+      "precio_presentacion_usd": 3.2,
+      "fraccion_usada": 0.015,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Sal",
+      "cantidad": "1 pizca",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.01,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Lava y corta la lechuga en trozos.",
+     "Suma el tomate y la cebolla en láminas.",
+     "Agrega el aguacate en cubos al final.",
+     "Aliña con limón, aceite y sal."
+    ],
+    "calorias_por_porcion": 180,
+    "proteina_g_por_porcion": 3,
+    "por_que_es_saludable": "Grasa buena del aguacate y hojas verdes: ensalada que sí llena.",
+    "busqueda_foto": "avocado salad",
+    "icono": "ensalada",
+    "plato_conocido": true,
+    "alergenos": []
+   }
+  },
+  {
+   "categoria": "Ensaladas",
+   "receta": {
+    "nombre": "Ensalada de atún",
+    "cocina": "Mediterránea",
+    "descripcion": "Atún con tomate, cebolla y limón sobre lechuga fresca.",
+    "porciones": 4,
+    "tiempo_minutos": 15,
+    "dificultad": "Fácil",
+    "etiquetas": [
+     "Alta en proteína",
+     "Rápida"
+    ],
+    "ingredientes": [
+     {
+      "nombre": "Atún en lata",
+      "cantidad": "1 lata",
+      "presentacion": "lata de 170 g",
+      "precio_presentacion_usd": 1.6,
+      "fraccion_usada": 1.0,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Tomate riñón",
+      "cantidad": "2 unidades",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.9,
+      "fraccion_usada": 0.5,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Cebolla paiteña",
+      "cantidad": "media unidad",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.15,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Lechuga",
+      "cantidad": "media unidad",
+      "presentacion": "unidad",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 1.0,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Limón",
+      "cantidad": "1 unidad",
+      "presentacion": "por libra",
+      "precio_presentacion_usd": 1.0,
+      "fraccion_usada": 0.15,
+      "basico_de_despensa": false
+     },
+     {
+      "nombre": "Aceite",
+      "cantidad": "1 cucharada",
+      "presentacion": "botella de 1 litro",
+      "precio_presentacion_usd": 3.2,
+      "fraccion_usada": 0.015,
+      "basico_de_despensa": true
+     },
+     {
+      "nombre": "Sal",
+      "cantidad": "1 pizca",
+      "presentacion": "funda de 1 kg",
+      "precio_presentacion_usd": 0.8,
+      "fraccion_usada": 0.01,
+      "basico_de_despensa": true
+     }
+    ],
+    "pasos": [
+     "Escurre el atún y desmenúzalo con un tenedor.",
+     "Pica el tomate y la cebolla bien finos.",
+     "Mezcla todo con el limón, el aceite y la sal.",
+     "Sirve sobre hojas de lechuga."
+    ],
+    "calorias_por_porcion": 160,
+    "proteina_g_por_porcion": 14,
+    "por_que_es_saludable": "Proteína magra del atún con verduras crudas, sin cocinar nada.",
+    "busqueda_foto": "tuna salad",
+    "icono": "pescado",
+    "plato_conocido": true,
+    "alergenos": [
+     "Pescado"
+    ]
+   }
+  }
+ ]
+}

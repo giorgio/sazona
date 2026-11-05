@@ -26,6 +26,7 @@ except Exception:  # noqa: BLE001
 
 import diseno as d
 import fotos
+import memoria
 import nucleo as n
 
 ICONO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icono.png")
@@ -106,21 +107,25 @@ def esperar_turno():
 
 @st.cache_data(ttl=86400, show_spinner=False, max_entries=60)
 def recetas_del_dia(cocina: str, dia: str, categoria: str = "Plato fuerte", dieta: str = "Todas",
-                    cuantas: int = POR_PAGINA, version: int = 2):
+                    cuantas: int = POR_PAGINA, version: int = 3):
     # version: subirla borra las recetas guardadas (p. ej. tras cambiar las reglas de la IA)
     """Recetas de una cocina y categoría. Se guardan un día y se comparten entre visitantes (ahorra cuota).
-    Se piden unas de más porque algunas se descartan (precio, dieta); si aun así faltan, se pide otra tanda."""
-    recetas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION, TIEMPO_MAX,
-                                  cantidad=cuantas + 3, categoria=categoria, dieta=dieta)
-    if len(recetas) < cuantas:
-        try:
-            mas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION, TIEMPO_MAX,
-                                      cantidad=cuantas - len(recetas) + 3, categoria=categoria, dieta=dieta,
-                                      excluir=[r.nombre for r in recetas])
-            recetas = sorted(recetas + mas, key=n.costo_porcion)
-        except n.ErrorIA:
-            pass
-    return recetas[:cuantas]
+    Primero sale el recetario guardado en memoria.py (gratis e instantáneo); la IA solo completa lo que falte,
+    y si la IA falla pero hay recetas guardadas, se muestran esas en vez de un error."""
+    de_memoria = memoria.muestra_diaria(dia, cuantas, cocina=cocina, categoria=categoria, dieta=dieta,
+                                        max_porcion=MAX_PORCION, tiempo=TIEMPO_MAX)
+    if len(de_memoria) >= cuantas:
+        return de_memoria[:cuantas]
+    try:
+        nuevas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION, TIEMPO_MAX,
+                                     cantidad=cuantas - len(de_memoria) + 3, categoria=categoria, dieta=dieta,
+                                     excluir=[r.nombre for r in de_memoria])
+        memoria.aprender(nuevas, categoria)          # lo que la IA crea hoy engorda el recetario de mañana
+    except n.ErrorIA:
+        if de_memoria:
+            return de_memoria
+        raise
+    return sorted(de_memoria + nuevas, key=n.costo_porcion)[:cuantas]
 
 
 def cocina_sugerida(dia: str) -> str:
@@ -340,16 +345,26 @@ def pagina_pais():
     cuadricula(recetas[:visibles], f"p{cocina[:3]}{n.CATEGORIAS.index(cat)}")
     st.write("")
     if st.button("Mostrar más", icon=":material/expand_more:", key="mas", width="stretch"):
-        if visibles >= len(recetas):  # ya se vieron todas: pedir nuevas a la IA
-            esperar_turno()
-            with st.spinner("Buscando más recetas…"):
-                try:
-                    nuevas, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION,
-                                                 TIEMPO_MAX, excluir=[r.nombre for r in recetas],
-                                                 cantidad=POR_PAGINA + 3, categoria=cat, dieta=dieta)
-                except n.ErrorIA as e:
-                    st.error(str(e))
-                    return
+        if visibles >= len(recetas):  # ya se vieron todas: primero más del recetario guardado (gratis)
+            conocidas = {r.nombre for r in recetas}
+            nuevas = [r for r in memoria.muestra_diaria(hoy(), visibles + POR_PAGINA, cocina=cocina,
+                                                        categoria=cat, dieta=dieta, max_porcion=MAX_PORCION,
+                                                        tiempo=TIEMPO_MAX)
+                      if r.nombre not in conocidas][:POR_PAGINA]
+            if len(nuevas) < POR_PAGINA:     # el recetario ya no tiene más de este filtro: la IA completa
+                esperar_turno()
+                with st.spinner("Buscando más recetas…"):
+                    try:
+                        de_ia, _ = n.buscar_recetas(cliente_gemini(), [cocina], BASE_PERSONAS, MAX_PORCION,
+                                                    TIEMPO_MAX, cantidad=POR_PAGINA - len(nuevas) + 3,
+                                                    excluir=list(conocidas | {r.nombre for r in nuevas}),
+                                                    categoria=cat, dieta=dieta)
+                        memoria.aprender(de_ia, cat)
+                        nuevas += de_ia
+                    except n.ErrorIA as e:
+                        if not nuevas:
+                            st.error(str(e))
+                            return
             s["extra"][clave] = s["extra"].get(clave, []) + nuevas
         s["visibles"][clave] = visibles + POR_PAGINA
         st.rerun()
